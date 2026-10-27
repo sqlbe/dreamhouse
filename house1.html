@@ -1,0 +1,818 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>섬마을 바다집</title>
+<style>
+  :root{
+    --bg:#f7f5f0; --panel:#ffffff; --ink:#2b2b2b; --sub:#6b6b6b; --line:#e3ded4;
+    --accent:#2f7fa8; --accent-soft:#e3f0f7; --wood:#9a6b43;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif}
+  header{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:12px 16px;
+    background:var(--panel);border-bottom:1px solid var(--line)}
+  header h1{font-size:18px;margin:0;font-weight:700}
+  header .sub{font-size:13px;color:var(--sub)}
+  nav{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+  nav button,.ctl button{border:1px solid var(--line);background:#fff;color:var(--ink);
+    padding:7px 12px;border-radius:8px;font-size:13px;cursor:pointer}
+  nav button.on,.ctl button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  main{height:calc(100% - 58px);position:relative}
+  section{display:none;height:100%;overflow:auto}
+  section.on{display:block}
+  #view3d{width:100%;height:100%;position:relative;overflow:hidden}
+  #view3d canvas{display:block}
+  .ctl{position:absolute;left:12px;bottom:12px;background:rgba(255,255,255,.92);
+    border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;
+    flex-direction:column;gap:8px;font-size:12px;max-width:calc(100% - 24px)}
+  .ctl .row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  .ctl .lbl{width:52px;color:var(--sub)}
+  .ctl button{padding:5px 9px;font-size:12px}
+  .hint{position:absolute;right:12px;top:12px;background:rgba(255,255,255,.88);
+    border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:12px;color:var(--sub)}
+  .sheet{max-width:1100px;margin:0 auto;padding:20px 16px 40px}
+  .sheet h2{font-size:17px;margin:0 0 4px}
+  .sheet p.cap{margin:0 0 12px;color:var(--sub);font-size:13px}
+  .paper{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px}
+  .paper svg{width:100%;height:auto;display:block}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--sub);margin-top:10px}
+  .memo{line-height:1.7;font-size:14px}
+  .memo h3{font-size:15px;margin:22px 0 6px}
+  .memo table{border-collapse:collapse;width:100%;font-size:13px;background:#fff}
+  .memo td,.memo th{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+  .memo th{background:#faf8f3}
+  .note{background:var(--accent-soft);border-radius:10px;padding:10px 12px;font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <h1>섬마을 바다집</h1>
+  <span class="sub">원통형 3세대 주택 · 지상 3층 + 천문대 옥상 · 3차 설계안</span>
+  <nav id="tabs">
+    <button data-t="t3d" class="on">3D 모델</button>
+    <button data-t="tsite">배치도</button>
+    <button data-t="tplan">세대 평면도</button>
+    <button data-t="troof">옥상 평면도</button>
+    <button data-t="tsec">단면도</button>
+    <button data-t="tmemo">설계 메모</button>
+  </nav>
+</header>
+<main>
+  <section id="t3d" class="on">
+    <div id="view3d">
+      <div class="hint">드래그: 회전 · 휠: 확대 · 우클릭 드래그: 이동<br>돔·무빙워크 지붕·옥상 터널을 <b>클릭</b>하면 열림/닫힘<br>무빙워크 바닥을 <b>클릭</b>하면 올라감/내려감<br>버튼 켜짐 = 닫힘(덮음) · 태풍 땐 자동으로 닫힘</div>
+      <div class="ctl">
+        <div class="row"><span class="lbl">시간</span>
+          <button data-time="day" class="on">낮</button><button data-time="dusk">노을</button><button data-time="night">밤</button></div>
+        <div class="row"><span class="lbl">날씨</span>
+          <button data-weather="calm" class="on">맑음</button><button data-weather="storm">태풍</button></div>
+        <div class="row"><span class="lbl">층 보기</span>
+          <button data-floor="9" class="on">전체</button><button data-floor="0">1층</button><button data-floor="1">2층</button><button data-floor="2">3층</button><button id="explode">층 펼치기</button></div>
+        <div class="row"><span class="lbl">옥상 터널</span>
+          <button data-shade="N">북(비막이)</button><button data-shade="E">동</button><button data-shade="S">남</button><button data-shade="W">서</button><button data-shade="all">전체</button></div>
+        <div class="row"><span class="lbl">개폐 지붕</span>
+          <button id="walkBtn">무빙워크 지붕</button><button id="domeBtn">천문대 돔</button></div>
+        <div class="row"><span class="lbl">무빙워크</span>
+          <button data-lane="0"></button><button data-lane="1"></button><button data-lane="2"></button></div>
+        <div class="row"><span class="lbl">시점</span>
+          <button data-view="home">전체</button><button data-view="top">위에서</button><button data-view="roof">옥상</button><button data-view="sea">바다에서</button><button data-view="walk">무빙워크</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tsite"><div class="sheet">
+    <h2>배치도</h2>
+    <p class="cap">북쪽은 마을 도로, 남쪽은 바다입니다. 육지 쪽(서·북·동)을 무빙워크 2차선이 반원으로 감싸고, 동·서 양쪽에 나선계단이 있습니다. 바다 쪽 반원형 테라스는 지면보다 1.2m 높고, 끝단에 파도를 바다 쪽으로 되돌려 보내는 곡면 방파벽이 있습니다.</p>
+    <div class="paper" id="svgSite"></div>
+  </div></section>
+
+  <section id="tplan"><div class="sheet">
+    <h2>세대 평면도 (1·2·3층 동일)</h2>
+    <p class="cap">지름 11m 원형 평면입니다. 실내는 약 85㎡(25.7평)이고, 남쪽 발코니(약 24㎡)와 코어 공용부를 더하면 28평형 정도입니다. 발코니 양 끝은 연결 데크로 이어져 나선계단과 무빙워크로 갈 수 있습니다. 침실 2개, 욕실 1개, 거실·주방·식당이 한 공간이고 거실에 벽난로가 있습니다.</p>
+    <div class="paper" id="svgPlan"></div>
+    <div class="legend"><span>■ 굵은 선: 구조벽(철근콘크리트 300mm)</span><span>■ 파란 선: 강화 접합유리 통창</span><span>■ 갈색 띠: 처마형 발코니</span></div>
+  </div></section>
+
+  <section id="troof"><div class="sheet">
+    <h2>옥상 평면도</h2>
+    <p class="cap">가운데 투명 천문대 돔(평소에는 유리 조각들이 북쪽으로 밀려 모여 열려 있음)에서 4방향으로 아치 그늘막이 뻗어 위에서 보면 십자 모양입니다. 그림은 그늘막을 모두 펼친 상태이고, 리모컨으로 방향별로 접어 돔 쪽으로 넣을 수 있습니다. 북쪽(코어 출입구 쪽)은 비까지 막는 폴리카보네이트입니다.</p>
+    <div class="paper" id="svgRoof"></div>
+    <div class="legend"><span>■ 연하늘 띠: 투명 개폐 터널(폴리카보네이트)</span><span>■ 하늘색 띠: 비 차단형</span><span>■ 초록: 화단·잔디</span></div>
+  </div></section>
+
+  <section id="tsec"><div class="sheet">
+    <h2>단면도 (북 → 남)</h2>
+    <p class="cap">1층 바닥을 지면보다 1.2m 높은 기단 위에 올렸습니다. 층고는 3.2m이고, 옥상에는 천문대 돔과 아치 그늘막이 있습니다. 왼쪽(북쪽)에 무빙워크 3개 차선의 단면이 보입니다.</p>
+    <div class="paper" id="svgSec"></div>
+  </div></section>
+
+  <section id="tmemo"><div class="sheet memo">
+    <h2>설계 메모 — 3차안</h2>
+
+    <h3>1. 왜 "돔" 대신 "원통 + 낮은 곡면"인가</h3>
+    <p>돔은 바람과 파도를 잘 흘려 보내지만, 3층으로 쌓으면 위층이 좁아지고 둥근 천장 때문에 가구를 놓기 어렵습니다. 그래서 <b>돔의 장점(모서리 없는 곡면이라 바람이 갈라져 흐름)은 살리고 층마다 같은 넓이를 확보할 수 있는 원통형</b>으로 정했습니다. 돔은 옥상 천문대에 넣었습니다.</p>
+    <ul>
+      <li><b>원형 평면:</b> 어느 방향에서 바람이 불어도 맞바람 면이 작아 풍하중이 줄어듭니다.</li>
+      <li><b>철근콘크리트 벽 300mm + 코어:</b> 엘리베이터·계단 코어가 기둥 역할을 해서 건물이 흔들리지 않게 잡아 줍니다.</li>
+      <li><b>기단 +1.2m:</b> 해일과 월파가 생활층까지 들어오지 않게 합니다.</li>
+      <li><b>곡면 방파벽(+2.4m):</b> 위쪽이 바다 쪽으로 말린 형태라 부딪힌 파도를 바다 쪽으로 되돌려 보냅니다.</li>
+      <li><b>남쪽 통창:</b> 태풍용 강화 접합유리와 외부 전동 셔터(태풍 시 닫음)를 함께 씁니다.</li>
+      <li><b>처마형 발코니:</b> 각 층을 1.5m씩 내민 둥근 처마로 만들어 한옥 처마 느낌을 냈습니다.</li>
+    </ul>
+
+    <h3>2. 옥상 — 천문대 + 십자 아치 그늘막 (2차안 추가)</h3>
+    <ul>
+      <li><b>중앙 천문대 돔 (투명 개폐식):</b> 지름 5.5m의 유리 돔이 부채꼴 조각 8장으로 나뉘어 있습니다. 조각들이 레일을 따라 미닫이문처럼 돌아가며 <b>북쪽(코어 쪽) 한곳에 겹쳐 모이는 슬라이드 방식</b>입니다. <b>평소에는 모두 북쪽으로 모여 열려 있어 바다 쪽 하늘이 트여 있고</b>, 비나 태풍이 오면 펼쳐져 닫힙니다. 닫혀 있어도 투명해서 안에서 별을 볼 수 있습니다. 안에는 망원경이 있습니다.</li>
+      <li><b>십자 투명 터널:</b> 돔에서 동·서·남·북 4방향으로 아치 골조가 뻗어 나가서 <b>위에서 보면 십자 모양</b>입니다. 지붕은 투명 폴리카보네이트 아치 4칸이 겹쳐 있는 구조이고, <b>열면 바깥쪽 칸들이 제일 안쪽(돔 쪽) 칸 속으로 미끄러져 들어가 겹치고</b>, 닫으면 다시 밖으로 펼쳐집니다. 3D에서 터널을 클릭하거나 리모컨 버튼으로 방향마다 따로 열고 닫을 수 있습니다.</li>
+      <li><b>북쪽은 옆막까지 있는 비 차단형:</b> 엘리베이터·계단 출입구에서 돔까지 이어지는 북쪽 통로는 지붕에 옆막까지 달려 있어서, 닫으면 옆에서 들이치는 비도 막아 줍니다.</li>
+      <li><b>바비큐 자리:</b> 북동쪽 코너에 그릴, 개수대, 연기 후드가 있는 돌 조리대를 두고, 옆에 스탠딩 바 테이블을 놓았습니다. 비 차단 통로와 코어(급수·가스)에 가깝습니다.</li>
+      <li><b>그 밖에:</b> 남쪽 아치 아래 6인 식탁(바다 조망), 남동·남서에 별보기용 눕는 의자 4개, 북서에 텃밭 2개와 나무, 가장자리 화단이 있습니다.</li>
+      <li>1차안의 기와 정자(사모정) 자리는 천문대 돔과 십자 아치가 차지해서 뺐습니다. 대신 아치 골조를 목재로 해서 한옥 느낌을 이었습니다. 정자를 다시 원하시면 화단 쪽에 작게 넣을 수 있습니다.</li>
+    </ul>
+
+    <h3>3. 외부 동선 — 무빙워크 + 나선계단 (2차안 추가)</h3>
+    <div class="note">
+      <b>무빙워크(서서 타면 움직이는 경사 보도):</b> 건물의 육지 쪽(서 → 북 → 동)을 반원으로 감싸며 층마다 하나씩 올라갑니다. 바다 쪽 전망은 가리지 않습니다.<br>
+      ① 1층 → 2층 (안쪽 차선) · ② 2층 → 3층 (바깥 차선, 반대 방향) · ③ 3층 → 옥상 (안쪽 차선)<br>
+      길이는 차선당 약 31~36m이고, 경사는 약 5~6°로 쇼핑몰 경사 무빙워크(최대 12°)보다 훨씬 완만해서 어르신이나 휠체어도 편합니다. 한 층 오르는 데 약 1분 걸립니다.
+    </div>
+    <ul>
+      <li><b>곡선 무빙워크는 실제로 거의 없습니다.</b> 그래서 3m 정도의 직선 구간 10개를 이어 붙인 다각형 형태로 그렸습니다. 실제 시공도 이 방식(직선 구간 + 짧은 연결부)이 현실적입니다.</li>
+      <li><b>대안(플랜 B):</b> 비용·법규 때문에 무빙워크가 어려우면, 같은 자리와 같은 모양 그대로 <b>걸어서 오르내리는 경사로</b>로 바꿉니다. 골조, 투명 개폐 지붕, 연결 데크는 그대로 쓰고 움직이는 벨트만 고정 바닥으로 바꾸면 됩니다. 다만 휠체어 경사로 기준(1/12 ≈ 8.3%)을 맞추려면 한 층 길이를 지금(약 31~36m)보다 늘린 40m 정도로 해야 합니다.</li>
+      <li>센서가 사람을 감지하면 움직이고, <b>구간마다 방향을 바꿔 오르내림 모두 가능</b>합니다(3D에서 무빙워크 바닥을 클릭하거나 버튼으로 전환). 출입구 표시등에 지금 방향(▲/▼)이 표시되는 것을 전제로 했습니다.</li>
+      <li><b>층별 연결 데크:</b> 각 층 발코니의 동쪽·서쪽 끝을 바깥으로 연장한 데크입니다. 무빙워크와 계단이 모두 여기에 닿습니다.</li>
+      <li><b>나선계단 2개(동·서):</b> 연결 데크에서 바닥까지 내려가는 원형 계단입니다. 한 바퀴에 한 층씩 내려가서 출구 방향이 층마다 같습니다. 화재 때 피난계단 역할도 합니다.</li>
+      <li>무빙워크 골조 때문에 차고를 북쪽 도로 옆으로 옮겼고, 보행로는 무빙워크 아래를 지나 코어 1층 출입구로 이어집니다.</li>
+      <li><b>투명 개폐 지붕:</b> 무빙워크 전 구간에 폴리카보네이트 아치 지붕을 씌웠습니다. 투명 판 3장이 겹쳐 있다가 아치 레일을 따라 미끄러지며 <b>건물 쪽으로 말려 들어가는 롤탑(슬라이드) 방식</b>이라, 맑은 날에는 바람을 맞으며 오르고, 비가 오면 닫힙니다. 빗물 감지 센서와 연동할 수 있습니다.</li>
+      <li>바닷가라 염분이 많으므로 무빙워크와 개폐 지붕 부품은 스테인리스로 하는 것을 권합니다.</li>
+    </ul>
+
+    <h3>4. 층별 구성</h3>
+    <table>
+      <tr><th>층</th><th>용도</th><th>비고</th></tr>
+      <tr><td>지상(GL)</td><td>차고 1대, 보행로, 코어 출입구, 나선계단 입구</td><td>차고 지붕은 잔디 지붕</td></tr>
+      <tr><td>1층 (+1.2m)</td><td>가족 A — 침실 2, 욕실, 거실·주방, 벽난로</td><td>바다 테라스, 무빙워크 ① 출발</td></tr>
+      <tr><td>2층 (+4.4m)</td><td>가족 B — 같은 평면</td><td>처마 발코니 → 연결 데크</td></tr>
+      <tr><td>3층 (+7.6m)</td><td>가족 C — 같은 평면</td><td>처마 발코니 → 연결 데크</td></tr>
+      <tr><td>옥상 (+10.8m)</td><td>천문대, 십자 아치 그늘막, 바비큐, 텃밭</td><td>엘리베이터, 계단, 무빙워크 ③, 나선계단으로 올라감</td></tr>
+    </table>
+
+    <h3>5. 가정한 것 (확인이 필요해요)</h3>
+    <ul>
+      <li>"28평형"은 <b>한 세대(한 층) 크기</b>로 봤습니다.</li>
+      <li>무빙워크와 나선계단이 건물을 감싸면서 필요한 땅이 커졌습니다. 이제 <b>약 40m × 45m(약 550평)</b>를 가정했습니다.</li>
+      <li>지하층은 넣지 않았습니다(바닷가 침수 위험).</li>
+      <li>그늘막, 돔, 무빙워크 지붕은 모두 전동 모터와 리모컨으로 움직이고, 풍속·빗물 센서와 연동하는 것을 전제로 했습니다. 태풍 때는 옥상 터널 4방향, 돔, 무빙워크 지붕이 모두 자동으로 닫힙니다(3D "태풍" 모드에서 확인할 수 있습니다).</li>
+    </ul>
+
+    <h3>6. 다음 단계에서 정할 것</h3>
+    <ul>
+      <li>세대별 방 개수와 크기(1층 어르신 세대: 문턱 없는 욕실 등)</li>
+      <li>외장 재료: 노출 콘크리트, 흰 도장, 현무암 등</li>
+      <li>무빙워크 지붕 여부, 그늘막 천의 색</li>
+      <li>실제 시공은 건축사의 구조 계산과 지역 법규(건폐율, 해안 건축 제한, 승강기 법규) 검토가 꼭 필요합니다.</li>
+    </ul>
+  </div></section>
+</main>
+
+<script>
+/* ---------- 탭 ---------- */
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('main section').forEach(s=>s.classList.toggle('on',s.id===b.dataset.t));
+  window.dispatchEvent(new Event('resize'));
+});
+
+/* ---------- 2D 도면 공통 ---------- */
+const RI=5.2, RW=5.35;
+const cx=(y,r=RI)=>Math.sqrt(Math.max(0,r*r-y*y));
+const P=(r,a)=>[r*Math.cos(a*Math.PI/180), r*Math.sin(a*Math.PI/180)];
+function arc(r,a1,a2){const[x1,y1]=P(r,a1),[x2,y2]=P(r,a2);return `M${x1} ${y1} A${r} ${r} 0 ${a2-a1>180?1:0} 1 ${x2} ${y2}`}
+function sector(r1,r2,a1,a2){const[x1,y1]=P(r2,a1),[x2,y2]=P(r2,a2),[x3,y3]=P(r1,a2),[x4,y4]=P(r1,a1);
+  return `M${x1} ${y1} A${r2} ${r2} 0 0 1 ${x2} ${y2} L${x3} ${y3} A${r1} ${r1} 0 0 0 ${x4} ${y4}Z`}
+const L=(x1,y1,x2,y2,w=.12,c='#333')=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="${w}" stroke-linecap="butt"/>`;
+const R=(x1,y1,x2,y2,f='none',s='#999',w=.03)=>`<rect x="${x1}" y="${y1}" width="${x2-x1}" height="${y2-y1}" fill="${f}" stroke="${s}" stroke-width="${w}"/>`;
+const T=(x,y,t,s=.32,c='#333',w=600)=>`<text x="${x}" y="${y}" font-size="${s}" fill="${c}" font-weight="${w}" text-anchor="middle" font-family="Malgun Gothic,sans-serif">${t}</text>`;
+const C=(x,y,r,f='none',s='#999',w=.03)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${f}" stroke="${s}" stroke-width="${w}"/>`;
+function north(x,y){return `<g transform="translate(${x} ${y})"><circle r=".7" fill="#fff" stroke="#555" stroke-width=".04"/><path d="M0 -.6 L.25 .3 L0 .15 L-.25 .3Z" fill="#333"/>${T(0,-.85,'N',.32)}</g>`}
+function scale(x,y){let s='';for(let i=0;i<5;i++)s+=R(x+i,y,x+i+1,y+.18,i%2?'#fff':'#444','#444',.02);
+  return s+T(x,y+.55,'0',.24,'#555',400)+T(x+1,y+.55,'1',.24,'#555',400)+T(x+5,y+.55,'5m',.24,'#555',400)}
+
+/* ---------- 세대 평면도 ---------- */
+function planSVG(){
+  let s=`<svg viewBox="-10.2 -10.6 20.4 19.4" xmlns="http://www.w3.org/2000/svg">`;
+  // 발코니
+  s+=`<path d="${sector(5.5,7,15,165)}" fill="#efe2cb" stroke="#9a6b43" stroke-width=".05"/>`;
+  s+=`<path d="${arc(6.92,15,165)}" fill="none" stroke="#9a6b43" stroke-width=".1"/>`;
+  s+=T(0,6.55,'처마 발코니 · 약 24㎡',.3,'#7a5232');
+  for(const sx of[1,-1]){s+=R(sx>0?5.45:-9.9,-2.8,sx>0?9.9:-5.45,1.85,'#e2cda9','#9a6b43',.05);
+    s+=T(sx*7.9,-1.2,'연결 데크',.26,'#7a5232')+T(sx*7.9,-.8,sx>0?'→ 나선계단':'나선계단 ←',.2,'#7a5232',400)+T(sx*7.9,-.45,sx>0?'→ 무빙워크':'무빙워크 ←',.2,'#7a5232',400)}
+  // 코어
+  s+=R(-3,-9.6,3,-5.0,'#f1eee8','#333',.25);
+  s+=R(-2.8,-9.4,-.8,-7.4,'#fff','#555',.05)+L(-2.8,-9.4,-.8,-7.4,.03,'#888')+L(-.8,-9.4,-2.8,-7.4,.03,'#888');
+  s+=T(-1.8,-8.3,'엘리베이터',.26)+T(-1.8,-7.95,'휠체어·침대용',.2,'#777',400);
+  s+=R(.6,-9.4,2.8,-5.6,'#fff','#555',.05)+L(1.7,-9.0,1.7,-5.6,.04,'#555');
+  for(let y=-9.0;y<=-5.6;y+=.28)s+=L(.6,y,2.8,y,.02,'#999');
+  s+=T(1.7,-5.25,'계단',.24,'#555');
+  s+=T(-1.3,-6.15,'공용 홀',.26,'#555');
+  // 실내 바닥 + 외벽
+  s+=C(0,0,RI,'#fff','none',0);
+  s+=`<circle r="${RW}" fill="none" stroke="#2b2b2b" stroke-width=".3"/>`;
+  // 통창
+  s+=`<path d="${arc(RW,25,155)}" fill="none" stroke="#fff" stroke-width=".32"/>`;
+  s+=`<path d="${arc(5.27,25,155)}" fill="none" stroke="#3a8fc4" stroke-width=".05"/>`;
+  s+=`<path d="${arc(5.43,25,155)}" fill="none" stroke="#3a8fc4" stroke-width=".05"/>`;
+  // 측면 창(띠살창)
+  [[-20,-5],[185,200],[-60,-48],[228,240]].forEach(([a,b])=>{
+    s+=`<path d="${arc(RW,a<0?a+360:a,b<0?b+360:b)}" fill="none" stroke="#fff" stroke-width=".32"/><path d="${arc(RW,a<0?a+360:a,b<0?b+360:b)}" fill="none" stroke="#9a6b43" stroke-width=".08"/>`});
+  // 현관 출입구
+  s+=R(-.6,-5.62,.4,-5.0,'#fff','none',0);
+  // 칸막이벽
+  const yA=.5;
+  s+=L(-cx(yA),yA,-1,yA)+L(1,yA,cx(yA),yA);
+  s+=L(-1,-cx(1),-1,-1.6)+L(-1,-.7,-1,yA);
+  s+=L(1,-cx(1),1,-3.9)+L(1,-3.1,1,-1.6)+L(1,-.7,1,yA);
+  s+=L(1,-2.2,3.4,-2.2)+L(4.1,-2.2,cx(2.2),-2.2);
+  s+=L(3,-cx(3),3,-2.2);
+  // 문
+  const D=(d)=>`<path d="${d}" fill="none" stroke="#777" stroke-width=".03"/>`;
+  s+=D('M-1 -.7 L-1.9 -.7 A.9 .9 0 0 1 -1 -1.6');
+  s+=D('M1 -.7 L1.9 -.7 A.9 .9 0 0 0 1 -1.6');
+  s+=D('M1 -3.1 L1.8 -3.1 A.8 .8 0 0 0 1 -3.9');
+  s+=D('M3.4 -2.2 L3.4 -2.9 A.7 .7 0 0 1 4.1 -2.2');
+  s+=D('M-.6 -5.1 L-.6 -4.1 A1 1 0 0 0 .4 -5.1');
+  // 가구
+  s+=R(-3.9,-3.0,-2.1,-1.0)+R(-3.9,-3.0,-2.1,-2.6,'#eee')+R(-4.4,-.1,-1.6,.5,'#f6f6f6');
+  s+=R(3.0,-1.4,4.5,.35)+R(3.0,-1.4,4.5,-1.0,'#eee')+R(1.9,-.1,2.9,.5,'#f6f6f6');
+  s+=`<ellipse cx="2.4" cy="-4.0" rx=".22" ry=".3" fill="none" stroke="#999" stroke-width=".03"/>`+R(1.2,-4.7,1.8,-4.2)+R(1.9,-3.2,2.9,-2.3)+L(1.9,-3.2,2.9,-2.3,.02,'#bbb');
+  s+=R(3.3,-3.4,3.9,-2.8)+C(3.6,-3.1,.2);
+  s+=R(-1,-4.9,-.6,-4.0,'#f6f6f6')+`<line x1="-1" y1="-4" x2="1" y2="-4" stroke="#999" stroke-width=".03" stroke-dasharray=".1 .08"/>`;
+  s+=R(-4.5,.5,-1.2,1.1,'#f6f6f6')+C(-3.1,.8,.18)+[[-2.2,.68],[-1.9,.68],[-2.2,.95],[-1.9,.95]].map(([x,y])=>C(x,y,.08)).join('');
+  s+=R(-3.8,1.9,-1.8,2.6,'#f6f6f6');
+  s+=C(-2.0,3.4,.6)+[[0,-.9],[0,.9],[-.9,0],[.9,0]].map(([a,b])=>C(-2.0+a,3.4+b,.2)).join('');
+  s+=R(1.4,1.3,2.2,3.6,'#eef1f5')+R(2.8,2.0,3.5,2.9)+R(2.4,3.5,3.0,4.1,'#eef1f5');
+  s+=R(4.2,1.0,4.7,2.2,'#e8c39e','#a0623a',.04)+`<path d="M4.3 1.6 q.12 -.25 .2 0 q.1 -.2 .15 0" fill="#e0712b"/>`;
+  // 실명
+  s+=T(-2.9,-3.6,'안방')+T(-2.9,-3.3,'약 18㎡',.22,'#888',400);
+  s+=T(3.0,-.6,'작은방',.3)+T(3.0,-.3,'약 10㎡',.22,'#888',400);
+  s+=T(2.0,-2.6,'욕실',.26)+T(3.85,-2.45,'드레스·세탁',.17);
+  s+=T(0,-4.4,'현관',.28)+T(0,-2.2,'복도',.26,'#777',400);
+  s+=T(0,3.0,'거실 · 주방 · 식당',.34)+T(0,3.38,'약 37㎡ · 바다 조망',.22,'#888',400);
+  s+=T(-2.8,1.65,'주방',.24,'#666',500)+T(3.25,.85,'벽난로',.24,'#a0623a');
+  s+=T(0,-9.95,'↑ 도로 (북)',.28,'#777',500)+T(0,8.3,'↓ 바다 (남)',.3,'#2f7fa8');
+  s+=north(8.6,-8.8)+scale(-9.6,7.6);
+  return s+'</svg>';
+}
+
+/* ---------- 배치도 ---------- */
+function arrowAt(r,a,dir,c){const[x,y]=P(r,a);return `<path d="M-.3 -.28 L.3 0 L-.3 .28" fill="none" stroke="${c}" stroke-width=".12" transform="translate(${x} ${y}) rotate(${a+(dir>0?90:-90)})"/>`}
+function spiralMark(x,y){let s=C(x,y,1.3,'#fff','#555',.08);for(let a=0;a<360;a+=22.5){const[u,v]=P(1.3,a);s+=L(x,y,x+u,y+v,.025,'#999')}return s+C(x,y,.12,'#555','none',0)}
+function siteSVG(){
+  let s=`<svg viewBox="-20 -25 40 47.5" xmlns="http://www.w3.org/2000/svg">`;
+  s+=R(-20,-25,20,22.5,'#eef3e4','none',0);
+  s+=R(-20,-25,20,-21,'#d6d4cf','none',0)+`<line x1="-20" y1="-23" x2="20" y2="-23" stroke="#fff" stroke-width=".12" stroke-dasharray=".8 .6"/>`+T(14,-22.4,'마을 도로',.5,'#666');
+  s+=R(-20,11,20,17.5,'#f3e6c4','none',0)+T(-14,14.5,'모래사장',.5,'#a08850');
+  s+=R(-20,17.5,20,22.5,'#bfe0ef','none',0);
+  for(let i=0;i<4;i++)s+=`<path d="M-20 ${18.3+i*1.1} q2 -.5 4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0" fill="none" stroke="#fff" stroke-width=".1"/>`;
+  s+=T(0,21.6,'바다 (남쪽)',.6,'#2f7fa8');
+  // 진입로·차고·보행로
+  s+=R(-8.6,-21,-3.4,-20.5,'#e0ddd6','none',0);
+  s+=R(-9,-20.5,-3,-14.5,'#cfe0bf','#555',.12)+T(-6,-17.6,'차고',.45)+T(-6,-17,'(잔디 지붕)',.3,'#777',400);
+  s+=R(-1,-21,1,-9.6,'#e0ddd6','none',0)+T(2.4,-17.5,'보행로',.32,'#777',500);
+  [[-18,-8],[18,-8],[-19,4],[19,5],[-13,-18],[13,-18],[16,-14],[-17,-14],[7,-17],[-12,8],[12,8]].forEach(([x,y])=>s+=C(x,y,1.1,'#b9d39c','#8fb070',.06)+C(x,y,.15,'#8fb070','none',0));
+  // 테라스·기단
+  s+=`<path d="M-10.5 0 A10.5 10.5 0 0 0 10.5 0Z" fill="#ead8bb" stroke="none"/>`;
+  s+=C(0,0,7.2,'#ead8bb','none',0);
+  s+=`<path d="M-10.5 0 A10.5 10.5 0 0 0 10.5 0" fill="none" stroke="#6b6b6b" stroke-width=".45"/>`;
+  s+=T(0,10.0,'곡면 방파벽 (+2.4m)',.4,'#555');
+  s+=T(0,6.0,'바다 전망 테라스 (+1.2m)',.45,'#7a5232');
+  const tset=(x,y)=>{let t=`<circle cx="${x}" cy="${y}" r="1.35" fill="none" stroke="#c9a77c" stroke-width=".05" stroke-dasharray=".2 .15"/>`+C(x,y,.6,'#fff','#7a5232',.06);
+    [[0,-.95],[0,.95],[-.95,0],[.95,0]].forEach(([a,b])=>t+=R(x+a-.22,y+b-.22,x+a+.22,y+b+.22,'#fff','#7a5232',.04));return t};
+  s+=tset(0,8.0)+tset(-5.2,6.8)+tset(5.2,6.8);
+  // 무빙워크 (육지 쪽을 감싸는 2차선)
+  s+=`<path d="${sector(10.15,11.85,190,350)}" fill="#cfd4db" stroke="#6b7480" stroke-width=".05"/>`;
+  s+=`<path d="${sector(11.95,13.65,190,350)}" fill="#bcc3cc" stroke="#6b7480" stroke-width=".05"/>`;
+  for(const a of [205,235,300,330])s+=arrowAt(11,a,1,'#2f7fa8')+arrowAt(12.8,a,-1,'#c0692c');
+  s+=T(0,-10.85,'무빙워크 ①1층→2층 · ③3층→옥상',.3,'#244e66')+T(0,-12.68,'무빙워크 ②2층→3층 · 모두 투명 개폐 지붕',.3,'#8a4a1f');
+  // 연결 데크·나선계단
+  for(const sx of[1,-1]){
+    s+=R(sx>0?5.6:-13.8,-2.8,sx>0?13.8:-5.6,1.85,'#e2cda9','#9a6b43',.06);
+    s+=spiralMark(sx*15.2,-.5)+T(sx*15.2,1.45,'나선계단',.3,'#555')+T(sx*9.3,-1.7,'층별 연결 데크',.3,'#7a5232');
+  }
+  // 코어·주거동
+  s+=`<circle r="7.1" fill="none" stroke="#9a6b43" stroke-width=".05" stroke-dasharray=".25 .2"/>`;
+  s+=R(-3,-9.6,3,-5,'#d8d2c6','#444',.12)+T(0,-8.3,'코어',.4)+T(0,-7.7,'엘리베이터·계단',.3,'#666',400);
+  s+=C(0,0,5.5,'#fff','#333',.25)+T(0,-.4,'주거동',.55)+T(0,.35,'1~3층 · 층마다 1세대',.35,'#666',400)+T(0,1.0,'옥상 천문대 · 아치 그늘막',.35,'#2f7fa8',500);
+  s+=north(17.5,-18.5)+scale(-19,9);
+  return s+'</svg>';
+}
+
+/* ---------- 옥상 평면도 ---------- */
+function roofSVG(){
+  let s=`<svg viewBox="-9.6 -10.2 19.2 18" xmlns="http://www.w3.org/2000/svg">`;
+  for(const sx of[1,-1])s+=R(sx>0?7.1:-9.6,-2.8,sx>0?9.6:-7.1,1.85,'#e2cda9','#9a6b43',.05);
+  s+=T(8.35,-1.9,'연결 데크',.24,'#7a5232')+T(8.35,1.35,'→ 계단·무빙워크',.2,'#7a5232',400);
+  s+=T(-8.35,-1.9,'연결 데크',.24,'#7a5232')+T(-8.35,1.35,'계단 ←',.2,'#7a5232',400);
+  s+=C(0,0,7.1,'#dcebcb','#7aa9c4',.1);
+  // 화단
+  for(const[a,b]of[[20,70],[110,160],[200,245]])s+=`<path d="${sector(6.2,6.95,a,b)}" fill="#a6cf86" stroke="#6f9b52" stroke-width=".04"/>`;
+  // 십자 데크
+  s+=R(-1.7,-4.9,1.7,6.95,'#ead8bb','none',0)+R(-6.95,-1.7,6.95,1.7,'#ead8bb','none',0);
+  // 아치 그늘막 (펼친 상태)
+  const arm=(x1,y1,x2,y2,rain,vert)=>{let t=R(x1,y1,x2,y2,rain?'#cfe0ea':'#e6f3fa',rain?'#4f87a8':'#5d8fae',.06);
+    if(vert){for(let y=Math.min(y1,y2)+.3;y<Math.max(y1,y2);y+=1.0)t+=L(x1,y,x2,y,.05,rain?'#4f87a8':'#9a6b43')}
+    else{for(let x=Math.min(x1,x2)+.3;x<Math.max(x1,x2);x+=1.0)t+=L(x,y1,x,y2,.05,'#9a6b43')}
+    return t+L(vert?0:x1,vert?y1:0,vert?0:x2,vert?y2:0,.04,'#888')};
+  s+=arm(-1.85,2.6,1.85,6.95,false,true)+arm(-1.85,-4.9,1.85,-2.6,true,true)+arm(2.6,-1.85,6.95,1.85,false,false)+arm(-6.95,-1.85,-2.6,1.85,false,false);
+  // 남쪽 식탁
+  s+=R(-.45,3.4,.45,6.2,'#fff','#7a5232',.05);for(const y of[3.8,4.8,5.8])for(const x of[-.8,.8])s+=R(x-.18,y-.18,x+.18,y+.18,'#fff','#7a5232',.03);
+  // 코어
+  s+=R(-3,-9.6,3,-4.9,'#ebe7df','#444',.12)+T(0,-7.7,'코어',.36)+T(0,-7.25,'엘리베이터·계단 출입',.24,'#666',400)+R(-.6,-5.0,.6,-4.85,'#7a5232','none',0);
+  // 천문대 돔
+  s+=C(0,0,2.75,'#e6f3fa','#5d8fae',.1);for(let a=22.5;a<360;a+=45){const[u,v]=P(2.75,a);s+=L(0,0,u,v,.04,'#7aa9c4')}
+  s+=`<g transform="rotate(-140)"><rect x="-.15" y="-.9" width=".3" height="1.2" fill="#fff" stroke="#555" stroke-width=".04"/></g>`+C(0,0,.25,'#555','none',0);
+  s+=T(0,1.0,'투명 개폐 돔',.3)+T(0,1.4,'망원경 · 슬라이드 유리 8조각',.2,'#666',400);
+  // 라벨
+  s+=T(0,6.55,'남 · 투명 개폐 터널',.24,'#7a5232');
+  s+=T(0,-3.9,'북 · 비 차단형',.22,'#2f6f94')+T(0,-3.5,'(폴리카보네이트)',.18,'#2f6f94',400);
+  s+=T(4.9,-.12,'동 · 투명 개폐 터널',.22,'#7a5232')+T(-4.9,-.12,'서 · 투명 개폐 터널',.22,'#7a5232');
+  // 바비큐
+  s+=`<g transform="translate(4.3 -4.0) rotate(45)"><rect x="-1.3" y="-.4" width="2.6" height=".8" fill="#d8d2c6" stroke="#555" stroke-width=".05"/><rect x="-1.2" y="-.32" width="1" height=".64" fill="#333"/><rect x=".3" y="-.3" width=".7" height=".6" fill="#e4e8ec" stroke="#888" stroke-width=".03"/></g>`;
+  s+=C(2.9,-2.7,.45,'#fff','#7a5232',.05)+[[2.2,-2.9],[3.1,-3.4],[2.75,-2.0]].map(([x,y])=>C(x,y,.17,'#fff','#7a5232',.03)).join('');
+  s+=T(5.6,-2.55,'바비큐',.28,'#a0623a')+T(5.6,-2.2,'그릴·개수대',.2,'#a0623a',400);
+  // 텃밭
+  s+=`<g transform="translate(-4.0 -3.9) rotate(-45)"><rect x="-1.2" y="-.35" width="1.1" height=".7" fill="#b48a62" stroke="#7a5232" stroke-width=".04"/><rect x=".1" y="-.35" width="1.1" height=".7" fill="#b48a62" stroke="#7a5232" stroke-width=".04"/></g>`;
+  s+=C(-3.0,-2.8,.6,'#b9d39c','#8fb070',.05)+T(-5.3,-2.4,'텃밭',.26,'#3f7a3a');
+  // 별보기 의자
+  for(const sx of[1,-1])for(const[x,y]of[[3.3,4.3],[4.5,3.1]])s+=R(sx*x-.33,y-.7,sx*x+.33,y+.7,'#fff','#7a5232',.04)+R(sx*x-.33,y-.7,sx*x+.33,y-.25,'#e9dcc6','none',0);
+  s+=T(4.6,5.6,'별보기 의자',.22,'#7a5232')+T(-4.6,5.6,'별보기 의자',.22,'#7a5232');
+  s+=north(8.4,-8.9)+scale(-9.2,7.0);
+  return s+'</svg>';
+}
+
+/* ---------- 단면도 ---------- */
+function secSVG(){
+  let s=`<svg viewBox="-15 -18.4 33.5 21.9" xmlns="http://www.w3.org/2000/svg">`;
+  const E=e=>-e;
+  s+=R(-15,-18.4,18.5,3.5,'#f7fbfd','none',0);
+  s+=`<polygon points="-15,0 11,0 18.5,1.13 18.5,3.5 -15,3.5" fill="#e9e3d3"/>`;
+  s+=`<polygon points="14.6,.69 18.5,.69 18.5,3.5 14.6,3.5" fill="#bfe0ef"/><path d="M14.8 .69 q.5 -.2 1 0 t1 0 t1 0 t1 0" fill="none" stroke="#2f7fa8" stroke-width=".04"/>`;
+  s+=`<line x1="-15" y1="0" x2="11" y2="0" stroke="#666" stroke-width=".05"/><line x1="11" y1="0" x2="18.5" y2="1.13" stroke="#666" stroke-width=".05"/>`;
+  s+=`<line x1="-15" y1="${E(1.0)}" x2="18.5" y2="${E(1.0)}" stroke="#2f7fa8" stroke-width=".04" stroke-dasharray=".3 .2"/>`+T(-14.1,E(1.25),'해일 +1.0m',.26,'#2f7fa8',500);
+  // 기단·방파벽
+  s+=R(-7.2,-1.2,10.5,0,'#d8d2c6','#555',.05);
+  s+=`<polygon points="10.3,-1.2 10.3,-2.1 10.6,-2.3 10.95,-2.25 11.15,-2.0 10.9,-1.6 10.75,-1.0 10.75,0 10.3,0" fill="#b9b4aa" stroke="#555" stroke-width=".04"/>`;
+  s+=T(11.3,E(2.7),'곡면 방파벽 +2.4m',.3,'#555',500);
+  // 무빙워크 (북측 단면)
+  [[-10.0,9.05],[-11.9,9.05],[-13.8,5.85]].forEach(([x,h])=>s+=L(x,0,x,E(h),.1,'#9aa3ad'));
+  [[-11.85,-10.15,2.82],[-11.85,-10.15,9.37],[-13.65,-11.95,6.17]].forEach(([a,b,e])=>s+=R(a,E(e),b,E(e)+.3,'#7b8591','none',0)+`<path d="M${a} ${E(e+1.15)} A${(b-a)/2} 1.1 0 0 1 ${b} ${E(e+1.15)}" fill="#e3f2fa" fill-opacity=".6" stroke="#7aa9c4" stroke-width=".04"/>`+L(a,E(e),a,E(e+1.15),.03,'#7aa9c4')+L(b,E(e),b,E(e+1.15),.03,'#7aa9c4'));
+  s+=T(-12.0,E(10.2),'무빙워크',.32,'#244e66')+T(-11,E(3.4),'①',.3,'#244e66')+T(-12.8,E(6.75),'②',.3,'#8a4a1f')+T(-11,E(9.95),'③',.3,'#244e66');
+  // 코어
+  s+=R(-9.6,E(13.8),-4.9,0,'#ebe7df','#444',.1)+T(-7.25,E(7),'코어',.38)+T(-7.25,E(6.4),'엘리베이터',.28,'#666',400)+T(-7.25,E(6.0),'+ 계단',.28,'#666',400);
+  // 층
+  const lv=[1.2,4.4,7.6,10.8];
+  lv.forEach((e,i)=>{
+    if(i>0)s+=R(-5.5,E(e)-.15,5.5,E(e)+.15,'#9c968b','none',0);
+    if(i>0)s+=R(5.5,E(e)-.12,i===3?7.2:7.0,E(e)+.12,'#9a6b43','none',0);
+    if(i===3)s+=R(-7.2,E(e)-.12,-5.5,E(e)+.12,'#9a6b43','none',0);
+    if(i<3){
+      s+=R(-5.5,E(e+3.2)+.15,-5.2,E(e)-.15,'#555','none',0);
+      s+=L(5.35,E(e)-.15,5.35,E(e+3.2)+.15,.08,'#3a8fc4');
+      if(i>0)s+=L(6.95,E(e)-.12,6.95,E(e+1.1),.05,'#7aa9c4');
+      s+=T(0,E(e+1.5),['1층 · 가족 A','2층 · 가족 B','3층 · 가족 C'][i],.42);
+      s+=T(0,E(e+1.0),'거실 · 주방 · 침실 2',.28,'#777',400);
+    }
+  });
+  // 옥상: 천문대 돔 + 아치 그늘막
+  const ry=10.97;
+  s+=L(7.1,E(10.92),7.1,E(12),.05,'#7aa9c4');
+  for(const x of[-2.5,2.5])s+=R(x-.2,E(14.12),x+.2,E(ry),'#f6f3ee','#888',.03);
+  s+=R(-2.75,E(14.57),2.75,E(14.12),'#f6f3ee','#777',.04);
+  s+=`<path d="M-2.75 ${E(14.57)} A2.75 2.75 0 0 1 2.75 ${E(14.57)}Z" fill="#e3f2fa" fill-opacity=".7" stroke="#5d8fae" stroke-width=".05"/>`;
+  s+=L(0,E(ry),0,E(12.2),.12,'#555')+`<line x1="-.55" y1="${E(12.0)}" x2=".7" y2="${E(13.3)}" stroke="#666" stroke-width=".28" stroke-linecap="round"/>`;
+  [[2.6,6.95,false],[-4.9,-2.6,true]].forEach(([a,b,rain])=>{
+    for(let x=a+.25;x<b;x+=1.0)s+=L(x,E(ry),x,E(14.2),.06,'#9a6b43');
+    s+=R(a,E(14.45),b,E(14.37),rain?'#7fb0cf':'#efe6d2',rain?'#4f87a8':'#9a6b43',.03)});
+  s+=R(-.45,E(11.75),.45,E(11.7),'#7a5232','none',0);
+  s+=T(0,E(15.6),'투명 개폐 돔',.34)+T(4.8,E(15.0),'아치 그늘막(남)',.28,'#7a5232')+T(-3.75,E(15.0),'비 차단(북)',.26,'#2f6f94');
+  // 레벨
+  [['지면 GL ±0',0],['1층 +1.2',1.2],['2층 +4.4',4.4],['3층 +7.6',7.6],['옥상 +10.8',10.8],['그늘막 +14.4',14.4],['돔 꼭대기 +17.3',17.3]].forEach(([t,e])=>{
+    s+=`<line x1="7.6" y1="${E(e)}" x2="12.6" y2="${E(e)}" stroke="#999" stroke-width=".025" stroke-dasharray=".15 .12"/>`;
+    s+=`<text x="12.8" y="${E(e)+.12}" font-size=".34" fill="#555" font-family="Malgun Gothic,sans-serif">▽ ${t}m</text>`});
+  s+=T(-12.6,E(16.6),'← 북 (도로)',.32,'#777',500)+T(17.2,E(3.2),'남 (바다) →',.32,'#2f7fa8',500);
+  return s+'</svg>';
+}
+document.getElementById('svgPlan').innerHTML=planSVG();
+document.getElementById('svgSite').innerHTML=siteSVG();
+document.getElementById('svgRoof').innerHTML=roofSVG();
+document.getElementById('svgSec').innerHTML=secSVG();
+</script>
+
+
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+ "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+
+const box=document.getElementById('view3d');
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+box.prepend(renderer.domElement);
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(42,1,.1,1200);
+camera.position.set(30,17,36);
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.target.set(0,5.5,0); controls.enableDamping=true; controls.maxPolarAngle=Math.PI*.49;
+controls.minDistance=6; controls.maxDistance=160;
+
+const hemi=new THREE.HemisphereLight(0xffffff,0x9c8a68,.9); scene.add(hemi);
+const sun=new THREE.DirectionalLight(0xffffff,2.4); sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);
+Object.assign(sun.shadow.camera,{left:-32,right:32,top:32,bottom:-32,near:1,far:200});
+sun.shadow.bias=-.0005; scene.add(sun);
+
+/* 재질 */
+const std=(c,o={})=>new THREE.MeshStandardMaterial({color:c,roughness:.85,...o});
+function tex(draw,w=256,h=256,rep=[1,1]){const c=document.createElement('canvas');c.width=w;c.height=h;draw(c.getContext('2d'),w,h);
+  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(...rep);return t}
+const lattice=tex((g,w,h)=>{g.fillStyle='#f4ead7';g.fillRect(0,0,w,h);g.strokeStyle='#7a5232';g.lineWidth=5;
+  g.strokeRect(2,2,w-4,h-4);g.lineWidth=3;for(let x=16;x<w;x+=16){g.beginPath();g.moveTo(x,0);g.lineTo(x,h);g.stroke()}
+  [h*.2,h*.5,h*.8].forEach(y=>{g.fillStyle='#7a5232';g.fillRect(0,y-5,w,10)})});
+const giwaTex=tex((g,w,h)=>{g.fillStyle='#454a52';g.fillRect(0,0,w,h);for(let x=0;x<w;x+=16){g.fillStyle='#363a41';g.fillRect(x,0,5,h)}},128,128,[3,3]);
+const deckTex=tex((g,w,h)=>{g.fillStyle='#c09468';g.fillRect(0,0,w,h);for(let y=0;y<h;y+=16){g.fillStyle='#a77c52';g.fillRect(0,y,w,2)}},128,128,[8,8]);
+const M={
+  wall:std(0xf6f3ee),concrete:std(0xd9d3c8),stone:std(0xbab4a8),wood:std(0x9a6b43,{roughness:.7}),
+  dwood:std(0x5b3a24),giwa:std(0xffffff,{map:giwaTex,roughness:.6,side:THREE.FrontSide}),
+  grass:std(0x86b35f),sand:std(0xe7d3a1),road:std(0x77746f),deck:std(0xffffff,{map:deckTex}),
+  floor:std(0xc9a57c,{roughness:.6}),soil:std(0x6e5a43),plant:std(0x5f9a45),
+  glass:new THREE.MeshPhysicalMaterial({color:0xa9d8ee,transparent:true,opacity:.28,roughness:.05,metalness:.1,side:THREE.DoubleSide,depthWrite:false}),
+  rail:new THREE.MeshPhysicalMaterial({color:0xd6eef8,transparent:true,opacity:.25,roughness:.05,side:THREE.DoubleSide,depthWrite:false}),
+  lattice:std(0xffffff,{map:lattice,side:THREE.DoubleSide,emissive:0x000000,emissiveMap:lattice}),
+  sofa:std(0x7d8c99),bed:std(0xf0ebe3),fabric:std(0xeae4d8),
+  fire:new THREE.MeshStandardMaterial({color:0x331100,emissive:0xff7a2a,emissiveIntensity:1.5}),
+  sea:new THREE.MeshStandardMaterial({color:0x2c8db3,roughness:.25,metalness:.15}),
+  parasol:std(0xf7f2e8,{side:THREE.DoubleSide})
+};
+function add(geo,mat,x=0,y=0,z=0,parent=scene,shadow=true){const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);
+  if(shadow){m.castShadow=true;m.receiveShadow=true}parent.add(m);return m}
+const box3=(x1,x2,y1,y2,z1,z2,mat,parent)=>add(new THREE.BoxGeometry(x2-x1,y2-y1,z2-z1),mat,(x1+x2)/2,(y1+y2)/2,(z1+z2)/2,parent);
+const D=d=>d*Math.PI/180;
+
+/* 대지 */
+const steel=std(0x3b3f45,{metalness:.5,roughness:.45});
+M.dark=std(0x2a2d31);
+add(new THREE.PlaneGeometry(500,250).rotateX(-Math.PI/2),M.grass,0,0,11-125,scene).castShadow=false;
+{const g=new THREE.PlaneGeometry(500,14,1,1).rotateX(-Math.PI/2);const p=g.attributes.position;
+ for(let i=0;i<p.count;i++){const z=p.getZ(i)+18;p.setZ(i,z);p.setY(i,-(z-11)/12*1.8)}g.computeVertexNormals();add(g,M.sand,0,0,0).castShadow=false}
+box3(-250,250,0,.03,-24,-21,M.road);
+box3(-8.6,-3.4,0,.04,-21,-20.5,M.concrete);
+box3(-1,1,0,.04,-21,-9.6,M.concrete);
+const seaGeo=new THREE.PlaneGeometry(500,240,200,96).rotateX(-Math.PI/2);seaGeo.translate(0,0,16+120);
+const seaBase=Float32Array.from(seaGeo.attributes.position.array);
+const sea=add(seaGeo,M.sea,0,-1.2,0);sea.castShadow=false;
+
+/* 나무 */
+function tree(x,z,s=1,parent=scene,y=0){add(new THREE.CylinderGeometry(.12*s,.18*s,1.6*s,8),M.dwood,x,y+.8*s,z,parent);
+  add(new THREE.SphereGeometry(1.1*s,12,10),M.plant,x,y+2.2*s,z,parent)}
+[[-18,-8],[18,-8],[-19,4],[19,5],[-13,-18],[13,-18],[16,-14],[-17,-14],[7,-17],[-12,8],[12,8]].forEach(([x,z])=>tree(x,z,1+Math.random()*.4));
+
+/* 기단·테라스·방파벽 */
+add(new THREE.CylinderGeometry(7.2,7.2,1.2,72),M.stone,0,.6,0);
+add(new THREE.CylinderGeometry(10.5,10.5,1.2,72,1,false,-Math.PI/2,Math.PI),M.stone,0,.6,0);
+add(new THREE.CylinderGeometry(10.3,10.3,.04,72,1,false,-Math.PI/2,Math.PI),M.deck,0,1.22,0);
+add(new THREE.CylinderGeometry(7.1,7.1,.04,72),M.deck,0,1.22,0);
+{const pts=[[10.3,1.2],[10.3,2.1],[10.6,2.3],[10.95,2.25],[11.15,2.0],[10.9,1.6],[10.75,1.0],[10.75,0],[10.3,0],[10.3,1.2]].map(([r,y])=>new THREE.Vector2(r,y));
+ add(new THREE.LatheGeometry(pts,96,-Math.PI/2,Math.PI),std(0xc4beb2,{side:THREE.DoubleSide}),0,0,0)}
+
+/* 테라스 테이블 세트 */
+const furniture=new THREE.Group();scene.add(furniture);
+function chair(parent,x,y,z,r){const g=new THREE.Group();g.position.set(x,y,z);g.rotation.y=r;parent.add(g);
+  box3(-.22,.22,.42,.47,-.22,.22,M.wood,g);box3(-.22,.22,.47,.95,-.24,-.2,M.wood,g);
+  [[-.18,-.18],[.18,-.18],[-.18,.18],[.18,.18]].forEach(([u,v])=>box3(u-.02,u+.02,0,.42,v-.02,v+.02,M.dwood,g))}
+function tableSet(x,z){const y=1.24;
+  add(new THREE.CylinderGeometry(.6,.6,.05,24),M.wood,x,y+.74,z,furniture);
+  add(new THREE.CylinderGeometry(.05,.05,.74,8),M.dwood,x,y+.37,z,furniture);
+  [[0,-.95,0],[0,.95,Math.PI],[-.95,0,Math.PI/2],[.95,0,-Math.PI/2]].forEach(([a,b,r])=>chair(furniture,x+a,y,z+b,r));
+  add(new THREE.CylinderGeometry(.03,.03,2.3,6),M.dwood,x,y+1.15,z,furniture);
+  add(new THREE.ConeGeometry(1.4,.5,8,1,true),M.parasol,x,y+2.35,z,furniture)}
+tableSet(0,8.0);tableSet(-5.2,6.8);tableSet(5.2,6.8);
+
+/* 차고 */
+box3(-9,-3,0,3,-20.5,-14.5,M.wall);
+box3(-9.05,-2.95,3,3.15,-20.55,-14.45,M.grass);
+box3(-8.4,-3.6,0,2.4,-20.53,-20.5,std(0x8a8580));
+for(let y=.3;y<2.4;y+=.3)box3(-8.4,-3.6,y,y+.02,-20.55,-20.53,std(0x6f6a64));
+
+/* 코어 */
+box3(-3,3,0,13.8,-9.6,-4.9,M.concrete);
+box3(.9,2.5,1.5,13.2,-9.63,-9.6,M.glass);
+box3(-3.05,3.05,13.8,14.0,-9.65,-4.85,M.stone);
+box3(2.0,2.6,13.8,14.9,-7.0,-6.4,M.stone); // 벽난로 연도 배출구
+box3(-.9,.9,0,2.4,-9.63,-9.6,std(0x7a5232)); // 1층 출입문(북측)
+box3(-.6,.6,10.97,13.1,-4.9,-4.86,std(0x7a5232)); // 옥상 출입문
+
+/* 주거층 */
+const floors=[];const H=3.2;const levels=[1.2,4.4,7.6];
+const lights=[];const fires=[];
+levels.forEach((y0,i)=>{
+  const g=new THREE.Group();scene.add(g);floors.push(g);
+  if(i>0){add(new THREE.CylinderGeometry(5.6,5.6,.3,72),M.concrete,0,y0,0,g);
+    add(new THREE.CylinderGeometry(7,7,.28,72,1,false,D(-75),D(150)),M.concrete,0,y0,0,g);
+    add(new THREE.CylinderGeometry(7.02,7.02,.3,72,1,true,D(-75),D(150)),M.wood,0,y0,0,g);
+    add(new THREE.CylinderGeometry(6.95,6.95,1.0,72,1,true,D(-75),D(150)),M.rail,0,y0+.65,0,g,false);
+    add(new THREE.CylinderGeometry(6.95,6.95,.07,72,1,true,D(-75),D(150)),M.wood,0,y0+1.15,0,g);
+    add(new THREE.CylinderGeometry(6.98,6.98,.04,72,1,false,D(-75),D(150)),M.deck,0,y0+.16,0,g)}
+  add(new THREE.CylinderGeometry(5.2,5.2,.03,72),M.floor,0,y0+.17,0,g);
+  const wh=H-.3,wy=y0+.15+wh/2;
+  add(new THREE.CylinderGeometry(5.5,5.5,wh,96,1,true,D(65),D(230)),std(0xf6f3ee,{side:THREE.DoubleSide}),0,wy,0,g);
+  add(new THREE.CylinderGeometry(5.42,5.42,wh,96,1,true,D(-65),D(130)),M.glass,0,wy,0,g,false);
+  for(let a=-65;a<=65;a+=13){const r=5.45;add(new THREE.BoxGeometry(.08,wh,.08),M.dwood,r*Math.sin(D(a)),wy,r*Math.cos(D(a)),g)}
+  [95,135,225,265].forEach(a=>{const r=5.53,m=add(new THREE.PlaneGeometry(1.1,1.7),M.lattice,r*Math.sin(D(a)),y0+1.6,r*Math.cos(D(a)),g,false);m.rotation.y=D(a)});
+  const cxx=y=>Math.sqrt(5.2*5.2-y*y);const pw=(x1,x2,z1,z2)=>box3(x1,x2,y0+.15,y0+.15+wh,z1,z2,M.wall,g);
+  pw(-cxx(.5),-1,.44,.56);pw(1,cxx(.5),.44,.56);pw(-1.06,-.94,-5.1,.5);pw(.94,1.06,-5.1,.5);
+  pw(1,4.71,-2.26,-2.14);pw(2.94,3.06,-4.25,-2.2);
+  const f=(x1,x2,h,z1,z2,mat)=>box3(x1,x2,y0+.18,y0+.18+h,z1,z2,mat,g);
+  f(1.4,2.2,.45,1.3,3.6,M.sofa);f(1.4,1.65,.85,1.3,3.6,M.sofa);f(2.8,3.5,.4,2.0,2.9,M.wood);
+  f(4.2,4.7,1.1,1.0,2.2,M.stone);
+  fires.push(box3(4.18,4.2,y0+.45,y0+.85,1.25,1.95,M.fire,g));
+  f(-4.5,-1.2,.9,.5,1.1,M.fabric);f(-3.8,-1.8,.9,1.9,2.6,M.fabric);
+  add(new THREE.CylinderGeometry(.6,.6,.05,24),M.wood,-2,y0+.93,3.4,g);
+  add(new THREE.CylinderGeometry(.06,.06,.75,8),M.dwood,-2,y0+.55,3.4,g);
+  f(-3.9,-2.1,.5,-3,-1,M.bed);f(3.0,4.5,.5,-1.4,.35,M.bed);
+  const pl=new THREE.PointLight(0xffc98a,0,14,1.6);pl.position.set(0,y0+2.5,1);g.add(pl);lights.push(pl);
+});
+
+/* 옥상: 천문대 돔 + 십자 아치 그늘막 + 바비큐 */
+const roof=new THREE.Group();scene.add(roof);floors.push(roof);
+const shadeArms=[];const roofLights=[];const petals=[];let dome,scope,bbqFire;
+const bulbMat=new THREE.MeshStandardMaterial({color:0xfff1d0,emissive:0xffc070,emissiveIntensity:0});
+{const y0=10.8,hy=y0+.22;
+ add(new THREE.CylinderGeometry(5.6,5.6,.3,72),M.concrete,0,y0,0,roof);
+ add(new THREE.LatheGeometry([[5.5,-.18],[7.25,-.05],[7.35,.08],[7.2,.15],[5.5,.15]].map(([r,y])=>new THREE.Vector2(r,y)),96),M.concrete,0,y0,0,roof);
+ add(new THREE.CylinderGeometry(7.28,7.28,.25,96,1,true),M.wood,0,y0,0,roof);
+ for(const[a,b]of[[-80,80],[100,155],[205,260]]){
+   add(new THREE.CylinderGeometry(7.1,7.1,1.05,48,1,true,D(a),D(b-a)),M.rail,0,y0+.7,0,roof,false);
+   add(new THREE.CylinderGeometry(7.1,7.1,.07,48,1,true,D(a),D(b-a)),M.wood,0,y0+1.22,0,roof)}
+ add(new THREE.CylinderGeometry(7.05,7.05,.05,96),M.grass,0,y0+.17,0,roof);
+ box3(-1.7,1.7,y0+.15,y0+.22,-4.9,6.95,M.deck,roof);
+ box3(-6.95,6.95,y0+.15,y0+.22,-1.7,1.7,M.deck,roof);
+ add(new THREE.CylinderGeometry(2.9,2.9,.08,48),M.deck,0,y0+.19,0,roof);
+ // 화단
+ for(const[a,b]of[[20,70],[-70,-20],[205,250]]){
+   add(new THREE.LatheGeometry([[6.2,0],[6.95,0],[6.95,.45],[6.2,.45],[6.2,0]].map(([r,y])=>new THREE.Vector2(r,y)),24,D(a),D(b-a)),std(0xb9b4aa,{side:THREE.DoubleSide}),0,hy,0,roof);
+   for(let t=a+5;t<b;t+=9){const r=6.55;add(new THREE.SphereGeometry(.32+Math.random()*.12,10,8),M.plant,r*Math.sin(D(t)),hy+.7,r*Math.cos(D(t)),roof)}}
+ // 천문대 허브: 기둥 4개 + 링보 + 회전 돔
+ for(const a of[45,135,225,315]){const m=add(new THREE.BoxGeometry(.7,3.1,.45),M.wall,2.5*Math.sin(D(a)),hy+1.55,2.5*Math.cos(D(a)),roof);m.rotation.y=D(a)}
+ add(new THREE.CylinderGeometry(2.75,2.75,.45,64,1,true),std(0xf6f3ee,{side:THREE.DoubleSide}),0,hy+3.32,0,roof);
+ dome=new THREE.Group();dome.position.set(0,hy+3.55,0);dome.userData.toggle='dome';roof.add(dome);
+ // 투명 유리 돔: 8조각이 미닫이처럼 돌아 북쪽(코어 쪽)에 겹쳐 모임
+ const domeGlass=new THREE.MeshPhysicalMaterial({color:0xd8eefa,transparent:true,opacity:.28,roughness:.05,metalness:.1,side:THREE.DoubleSide,depthWrite:false});
+ const gw=Math.PI/4,g0=D(247.5);
+ for(let i=0;i<8;i++){const g=new THREE.Group();dome.add(g);const r=2.75+i*.03;
+   add(new THREE.SphereGeometry(r,10,12,g0,gw,0,Math.PI/2),domeGlass,0,0,0,g,false);
+   for(const ph of[g0,g0+gw]){const t=add(new THREE.TorusGeometry(r+.01,.035,6,24,Math.PI/2),steel,0,0,0,g,false);t.rotation.y=Math.PI+ph}
+   petals.push({g,closed:gw*i,open:0})}
+ scope=new THREE.Group();scope.position.set(0,hy,0);roof.add(scope);
+ add(new THREE.CylinderGeometry(.12,.22,1.2,12),M.dark,0,.6,0,scope);
+ const tube=add(new THREE.CylinderGeometry(.16,.16,1.7,16),std(0xf4f4f4,{metalness:.3}),-.35,1.5,0,scope);tube.rotation.z=D(40);
+ const hubL=new THREE.PointLight(0xffc98a,0,10,1.6);hubL.position.set(0,hy+2.6,0);roof.add(hubL);roofLights.push(hubL);
+ // 십자 아치 그늘막 (원격 개폐, 4방향)
+ const shadeMat=new THREE.MeshPhysicalMaterial({color:0xdcecf5,transparent:true,opacity:.3,roughness:.05,side:THREE.DoubleSide,depthWrite:false});
+ const pcMat=new THREE.MeshPhysicalMaterial({color:0x8fb8d0,transparent:true,opacity:.6,roughness:.2,side:THREE.DoubleSide});
+ [{k:'S',rot:0,end:6.95},{k:'E',rot:Math.PI/2,end:6.95},{k:'N',rot:Math.PI,end:4.9,rain:true},{k:'W',rot:-Math.PI/2,end:6.95}].forEach(d=>{
+   const g=new THREE.Group();g.position.set(0,hy,0);g.rotation.y=d.rot;g.userData.toggle='shade:'+d.k;roof.add(g);
+   const z0=2.6,len=d.end-z0,n=d.rain?2:4,step=len/n;
+   const ribs=Math.max(2,Math.round(len/1.05));
+   for(let i=0;i<=ribs;i++){const z=z0+.25+(len-.4)*i/ribs;
+     add(new THREE.TorusGeometry(1.6,.07,8,32,Math.PI),M.wood,0,1.6,z,g);
+     for(const sx of[-1.6,1.6])add(new THREE.CylinderGeometry(.07,.08,1.6,8),M.wood,sx,.8,z,g)}
+   for(const[x,y]of[[-1.6,1.6],[1.6,1.6],[0,3.2]]){const m=add(new THREE.CylinderGeometry(.05,.05,len,8),steel,x,y,z0+len/2,g);m.rotation.x=Math.PI/2}
+   for(let z=z0+.5;z<d.end;z+=.8)add(new THREE.SphereGeometry(.06,8,6),bulbMat,0,3.1,z,g,false);
+   const segs=[];
+   for(let k=0;k<n;k++){const r=1.85-.05*k,L=step+.15;
+     const sg=new THREE.Group();g.add(sg);
+     const shell=new THREE.CylinderGeometry(r,r,L,32,1,true,Math.PI/2,Math.PI);shell.rotateX(Math.PI/2);
+     add(shell,d.rain?pcMat:shadeMat,0,1.6,0,sg,false);
+     add(new THREE.TorusGeometry(r,.04,6,32,Math.PI),steel,0,1.6,L/2,sg);
+     if(d.rain)for(const sx of[-r,r])add(new THREE.PlaneGeometry(L,1.3).rotateY(Math.PI/2),pcMat,sx,.95,0,sg,false);
+     segs.push({g:sg,closed:z0+step*(k+.5),open:z0+step*.5})}
+   segs.forEach(s=>s.g.position.z=s.closed);
+   shadeArms.push({key:d.k,segs,t:1,target:1});
+ });
+ // 남쪽 아치 아래 식탁
+ box3(-.45,.45,hy+.72,hy+.78,3.4,6.2,M.wood,roof);
+ for(const z of[3.6,6.0])box3(-.3,.3,hy,hy+.72,z-.04,z+.04,M.dwood,roof);
+ for(const z of[3.8,4.8,5.8]){chair(roof,-.8,hy,z,Math.PI/2);chair(roof,.8,hy,z,-Math.PI/2)}
+ const tblL=new THREE.PointLight(0xffc98a,0,9,1.6);tblL.position.set(0,hy+2.6,4.8);roof.add(tblL);roofLights.push(tblL);
+ // 바비큐
+ const bbq=new THREE.Group();bbq.position.set(4.3,hy,-4.0);bbq.rotation.y=D(-45);roof.add(bbq);
+ box3(-1.3,1.3,0,.9,-.4,.4,M.stone,bbq);
+ box3(-1.2,-.2,.9,.94,-.32,.32,std(0x222222,{metalness:.5}),bbq);
+ bbqFire=new THREE.MeshStandardMaterial({color:0x331100,emissive:0xff5a1a,emissiveIntensity:1.2});
+ box3(-1.12,-.28,.94,.95,-.26,.26,bbqFire,bbq);
+ for(let x=-1.1;x<-.25;x+=.1)box3(x,x+.02,.95,.97,-.28,.28,steel,bbq);
+ box3(.3,1.0,.9,.92,-.3,.3,std(0xd0d4d8,{metalness:.6,roughness:.3}),bbq);
+ box3(-1.25,-.15,1.9,2.05,-.4,.1,steel,bbq);
+ add(new THREE.CylinderGeometry(.09,.09,1.2,8),steel,-.7,2.6,-.2,bbq);
+ for(const x of[-1.2,-.2])box3(x-.03,x+.03,.9,1.9,-.38,-.32,steel,bbq);
+ const bbqL=new THREE.PointLight(0xffa060,0,6,1.6);bbqL.position.set(4.0,hy+1.6,-3.6);roof.add(bbqL);roofLights.push(bbqL);
+ add(new THREE.CylinderGeometry(.45,.45,.05,20),M.wood,2.9,hy+1.05,-2.7,roof);
+ add(new THREE.CylinderGeometry(.05,.05,1.05,8),M.dwood,2.9,hy+.52,-2.7,roof);
+ for(const[x,z]of[[2.2,-2.9],[3.1,-3.4],[2.75,-2.0]])add(new THREE.CylinderGeometry(.17,.17,.75,10),M.wood,x,hy+.37,z,roof);
+ // 텃밭 + 나무
+ const bed=new THREE.Group();bed.position.set(-4.0,hy,-3.9);bed.rotation.y=D(45);roof.add(bed);
+ for(const x of[-.65,.65]){box3(x-.55,x+.55,0,.45,-.35,.35,M.wood,bed);box3(x-.5,x+.5,.45,.47,-.3,.3,M.soil,bed);
+   for(let u=-.35;u<=.35;u+=.23)add(new THREE.SphereGeometry(.1,8,6),M.plant,x+u,.55,0,bed)}
+ tree(-3.0,-2.8,.6,roof,hy);
+ // 별보기 의자
+ for(const sx of[1,-1])for(const[x,z]of[[3.3,4.3],[4.5,3.1]]){
+   const l=new THREE.Group();l.position.set(sx*x,hy,z);roof.add(l);
+   box3(-.33,.33,.25,.4,-.3,.7,M.fabric,l);
+   const b=add(new THREE.BoxGeometry(.66,.08,.8),M.fabric,0,.62,-.6,l);b.rotation.x=.7;
+   for(const[u,v]of[[-.28,-.25],[.28,-.25],[-.28,.65],[.28,.65]])box3(u-.03,u+.03,0,.25,v-.03,v+.03,M.dwood,l)}
+}
+
+/* 외부 동선: 층별 연결 데크 + 나선계단 + 무빙워크 */
+const circ=new THREE.Group();scene.add(circ);
+const LV=[1.22,4.57,7.77,10.97];
+function rail(x1,x2,z1,z2,y){const dx=Math.abs(x2-x1),dz=Math.abs(z2-z1);
+  add(new THREE.BoxGeometry(Math.max(dx,.04),1.0,Math.max(dz,.04)),M.rail,(x1+x2)/2,y+.5,(z1+z2)/2,circ,false);
+  box3(Math.min(x1,x2)-.03,Math.max(x1,x2)+.03,y+.98,y+1.04,Math.min(z1,z2)-.03,Math.max(z1,z2)+.03,M.wood,circ)}
+function spiral(cx,cz,a0){const g=new THREE.Group();g.position.set(cx,0,cz);circ.add(g);
+  add(new THREE.CylinderGeometry(.1,.1,12,10),steel,0,6,0,g);
+  const tops=[];for(let k=0;k<6;k++)tops.push((k+1)*LV[0]/6);
+  for(let f=0;f<3;f++)for(let j=0;j<16;j++)tops.push(LV[f]+(j+1)*(LV[f+1]-LV[f])/16);
+  const hp=[];
+  tops.forEach((y,k)=>{const a=a0+D(22.5)*k;const sg=new THREE.Group();sg.rotation.y=a;g.add(sg);
+    box3(.12,1.3,y-.06,y,-.22,.22,M.wood,sg);
+    const px=1.27*Math.cos(a),pz=-1.27*Math.sin(a);
+    if((k-5)%16!==0)add(new THREE.CylinderGeometry(.015,.015,.9,4),steel,px,y+.45,pz,g,false);
+    hp.push(new THREE.Vector3(px,y+.9,pz))});
+  add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(hp),600,.03,6),steel,0,0,0,g,false)}
+for(const sx of[1,-1]){
+  const x1=sx>0?5.6:-13.8,x2=sx>0?13.8:-5.6,xo=sx*13.8,xi=sx*5.6;
+  LV.forEach((lv,i)=>{
+    const zMax=i===0?0:1.85;
+    if(i===0)box3(x1,x2,0,lv,-2.8,zMax,M.stone,circ);
+    else{box3(x1,x2,lv-.3,lv-.02,-2.8,zMax,M.concrete,circ);box3(x1,x2,lv-.02,lv,-2.8,zMax,M.deck,circ)}
+    rail(sx*7.1,xo,zMax,zMax,lv);
+    rail(xi,sx*10.05,-2.8,-2.8,lv);
+    rail(xo,xo,-2.8,-1.35,lv);rail(xo,xo,.35,zMax,lv);
+  });
+  for(const z of[-2.65,1.7])add(new THREE.CylinderGeometry(.15,.15,10.7,10),M.concrete,sx*13.65,5.35,z,circ);
+  spiral(sx*15.2,-.5,sx>0?D(67.5):D(-112.5));
+}
+// 무빙워크 벨트
+const beltTex=tex((g,w,h)=>{g.fillStyle='#5d6268';g.fillRect(0,0,w,h);g.fillStyle='#80868d';for(let x=0;x<w;x+=8)g.fillRect(x,0,3,h);g.fillStyle='#3a3e43';g.fillRect(0,0,w,4)},64,64);
+const lanes=[];
+const skirt=std(0xd6d9dc,{metalness:.5,roughness:.35});
+const pcRoof=new THREE.MeshPhysicalMaterial({color:0xcfe8f5,transparent:true,opacity:.3,roughness:.05,side:THREE.DoubleSide,depthWrite:false});
+const walkRoof=[];
+function lane(r,a1,a2,y1,y2,N=10){const pts=[],idx=lanes.length;
+  const tx=beltTex.clone();tx.needsUpdate=true;const beltMat=std(0xffffff,{map:tx,roughness:.55,metalness:.25});
+  for(let i=0;i<=N;i++){const a=D(a1+(a2-a1)*i/N);pts.push(new THREE.Vector3(r*Math.sin(a),y1+(y2-y1)*i/N,r*Math.cos(a)))}
+  for(let i=0;i<N;i++){const p1=pts[i],p2=pts[i+1],len=p1.distanceTo(p2)+.05;
+    const s=new THREE.Group();s.position.copy(p1).lerp(p2,.5);s.userData.toggle='lane:'+idx;circ.add(s);s.lookAt(p2);
+    box3(-.85,.85,-.32,-.02,-len/2,len/2,M.concrete,s);
+    const bg=new THREE.PlaneGeometry(1.15,len);const uv=bg.attributes.uv;for(let j=0;j<uv.count;j++)uv.setY(j,uv.getY(j)*len/.6);
+    bg.rotateX(-Math.PI/2);add(bg,beltMat,0,.015,0,s,false).receiveShadow=true;
+    for(const sx of[-.7,.7]){box3(sx-.08,sx+.08,-.02,.14,-len/2,len/2,skirt,s);
+      add(new THREE.BoxGeometry(.03,.85,len),M.rail,sx,.57,0,s,false);
+      box3(sx-.05,sx+.05,.97,1.05,-len/2,len/2,M.dark,s);
+      const h=add(new THREE.CylinderGeometry(.035,.035,len,6),steel,sx>0?.9:-.9,1.15,0,s,false);h.rotation.x=Math.PI/2}
+    // 투명 아치 지붕: 겹친 3장이 원호를 따라 미끄러져 건물 쪽으로 말려 들어감
+    const xw=new THREE.Vector3(1,0,0).applyQuaternion(s.quaternion),rad=s.position.clone().setY(0).normalize();
+    const inner=xw.dot(rad)>0?-1:1;
+    for(let k=0;k<3;k++){const r=.9+k*.03;
+      const geo=new THREE.CylinderGeometry(r,r,len,10,1,true,Math.PI/2,Math.PI/3);geo.rotateX(Math.PI/2);
+      const m=add(geo,pcRoof,0,1.15,0,s,false);m.userData.toggle='walk';
+      add(new THREE.TorusGeometry(r,.025,5,10,Math.PI/3),steel,0,0,len/2-.02,m,false);
+      walkRoof.push({m,closed:D(60*k),open:inner<0?D(120):0})}}
+  // 타고 있는 사람(이동 방향 표시)
+  const riders=[];
+  for(const [c,u0] of [[0xd9534f,.15],[0x3f7fbf,.6]]){const p=new THREE.Group();circ.add(p);
+    add(new THREE.CylinderGeometry(.17,.2,.95,10),std(c),0,.6,0,p);
+    add(new THREE.SphereGeometry(.14,12,10),std(0xf1c9a5),0,1.22,0,p);
+    riders.push({p,u:u0})}
+  lanes.push({tex:tx,dir:1,pts,riders,N});
+  return pts}
+function laneAt(l,u){const f=u*l.N,i=Math.min(l.N-1,Math.floor(f));return [l.pts[i].clone().lerp(l.pts[i+1],f-i),i]}
+lane(11,-100,-260,LV[0],LV[1]);    // ① 1층 → 2층 (서 → 북 → 동)
+lane(12.8,-260,-100,LV[1],LV[2]);  // ② 2층 → 3층 (동 → 북 → 서)
+lane(11,-100,-260,LV[2],LV[3]);    // ③ 3층 → 옥상
+for(let i=1;i<10;i++){const a=D(-100-16*i),t=i/10;
+  for(const[r,top]of[[10.0,LV[2]+3.2*t-.32],[11.9,LV[2]+3.2*t-.32],[13.8,LV[2]-3.2*t-.32]])
+    add(new THREE.CylinderGeometry(.13,.13,top,8),M.concrete,r*Math.sin(a),top/2,r*Math.cos(a),circ)}
+
+/* 비·별 */
+const rainN=5000,rainGeo=new THREE.BufferGeometry(),rp=new Float32Array(rainN*3);
+for(let i=0;i<rainN;i++){rp[i*3]=(Math.random()-.5)*90;rp[i*3+1]=Math.random()*40;rp[i*3+2]=(Math.random()-.5)*90}
+rainGeo.setAttribute('position',new THREE.BufferAttribute(rp,3));
+const rain=new THREE.Points(rainGeo,new THREE.PointsMaterial({color:0xcfd8e0,size:.12,transparent:true,opacity:.7}));
+rain.visible=false;scene.add(rain);
+const starP=[];for(let i=0;i<1800;i++){const u=Math.random()*Math.PI*2,v=Math.random()*Math.PI*.46;starP.push(500*Math.sin(v)*Math.cos(u),500*Math.cos(v),500*Math.sin(v)*Math.sin(u))}
+const starGeo=new THREE.BufferGeometry();starGeo.setAttribute('position',new THREE.Float32BufferAttribute(starP,3));
+const stars=new THREE.Points(starGeo,new THREE.PointsMaterial({color:0xffffff,size:1.6,sizeAttenuation:false,fog:false}));
+stars.visible=false;scene.add(stars);
+
+/* 상태 */
+let time='day',storm=false,floorView=9,exploded=false,walkOpen=true,domeOpen=true,walkK=1,domeK=1;
+function applyEnv(){
+  const sky={day:0xbfe3f5,dusk:0xf2c194,night:0x0b1626}[time];
+  const skyC=new THREE.Color(storm?(time==='night'?0x1b2229:0x6f7a84):sky);
+  scene.background=skyC;scene.fog=new THREE.Fog(skyC,storm?40:90,storm?140:320);
+  const night=time==='night';
+  if(time==='day'){sun.position.set(30,45,30);sun.color.set(0xffffff);sun.intensity=storm?.7:2.4;hemi.intensity=storm?.7:.9}
+  if(time==='dusk'){sun.position.set(-45,10,30);sun.color.set(0xffb070);sun.intensity=storm?.5:2.0;hemi.intensity=.55}
+  if(night){sun.position.set(-20,40,30);sun.color.set(0x8fa8d8);sun.intensity=.25;hemi.intensity=.18}
+  lights.forEach(l=>l.intensity=night?40:(time==='dusk'?14:0));
+  roofLights.forEach(l=>l.intensity=night?18:(time==='dusk'?6:0));
+  bulbMat.emissiveIntensity=night?3:(time==='dusk'?1.2:0);
+  M.lattice.emissive.set(night?0xffb070:0x000000);M.lattice.emissiveIntensity=night?.6:0;
+  M.sea.color.set(storm?0x3e5866:night?0x0f2a3d:time==='dusk'?0x3a7f9a:0x2c8db3);
+  rain.visible=storm;furniture.visible=!storm;stars.visible=night&&!storm;
+  roofButtons();
+}
+function applyFloors(){floors.forEach((g,i)=>{g.visible=floorView===9||i<=floorView;g.position.y=exploded?i*3.5:0});circ.visible=floorView===9&&!exploded}
+function shadeButtons(){document.querySelectorAll('[data-shade]').forEach(b=>{const k=b.dataset.shade;
+  b.classList.toggle('on',k==='all'?shadeArms.every(a=>a.target===1):shadeArms.find(a=>a.key===k).target===1)})}
+document.querySelectorAll('[data-time]').forEach(b=>b.onclick=()=>{time=b.dataset.time;
+  document.querySelectorAll('[data-time]').forEach(x=>x.classList.toggle('on',x===b));applyEnv()});
+document.querySelectorAll('[data-weather]').forEach(b=>b.onclick=()=>{storm=b.dataset.weather==='storm';
+  document.querySelectorAll('[data-weather]').forEach(x=>x.classList.toggle('on',x===b));applyEnv()});
+document.querySelectorAll('[data-floor]').forEach(b=>b.onclick=()=>{floorView=+b.dataset.floor;
+  document.querySelectorAll('[data-floor]').forEach(x=>x.classList.toggle('on',x===b));applyFloors()});
+function laneButtons(){document.querySelectorAll('[data-lane]').forEach(b=>{const i=+b.dataset.lane,l=lanes[i];
+  b.textContent=['①','②','③'][i]+' '+['1↔2층','2↔3층','3층↔옥상'][i]+' '+(l.dir>0?'▲ 올라감':'▼ 내려감');b.classList.toggle('on',l.dir>0)})}
+function roofButtons(){
+  const wb=document.getElementById('walkBtn'),db=document.getElementById('domeBtn');
+  wb.textContent='무빙워크 지붕: '+(storm?'자동 닫힘':walkOpen?'열림':'닫힘');
+  db.textContent='천문대 돔: '+(storm?'자동 닫힘':domeOpen?'열림':'닫힘');
+  wb.classList.toggle('on',!storm&&walkOpen);db.classList.toggle('on',!storm&&domeOpen)}
+document.querySelectorAll('[data-lane]').forEach(b=>b.onclick=()=>{lanes[+b.dataset.lane].dir*=-1;laneButtons()});
+document.getElementById('walkBtn').onclick=()=>{walkOpen=!walkOpen;roofButtons()};
+document.getElementById('domeBtn').onclick=()=>{domeOpen=!domeOpen;roofButtons()};
+document.getElementById('explode').onclick=e=>{exploded=!exploded;e.target.classList.toggle('on',exploded);applyFloors()};
+document.querySelectorAll('[data-shade]').forEach(b=>b.onclick=()=>{const k=b.dataset.shade;
+  if(k==='all'){const v=shadeArms.every(a=>a.target===1)?0:1;shadeArms.forEach(a=>a.target=v)}
+  else{const a=shadeArms.find(a=>a.key===k);a.target=1-a.target}shadeButtons()});
+// 돔·무빙워크 지붕 클릭으로 열고 닫기
+const ray=new THREE.Raycaster(),ptr=new THREE.Vector2();let downXY=null,hoverT=0;
+function tagOf(o){while(o){if(o.userData.toggle)return o.userData.toggle;o=o.parent}return null}
+function shown(o){while(o){if(!o.visible)return false;o=o.parent}return true}
+function pick(e){const r=renderer.domElement.getBoundingClientRect();
+  ptr.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(ptr,camera);
+  for(const h of ray.intersectObjects(scene.children,true)){const o=h.object;
+    if(o.isPoints||!shown(o))continue;const t=tagOf(o);if(t)return t;
+    if(o.material&&o.material.transparent)continue;return null}
+  return null}
+renderer.domElement.addEventListener('pointerdown',e=>downXY=[e.clientX,e.clientY]);
+renderer.domElement.addEventListener('pointerup',e=>{
+  if(!downXY||Math.hypot(e.clientX-downXY[0],e.clientY-downXY[1])>5)return;
+  const t=pick(e);if(!t)return;
+  if(t==='dome')domeOpen=!domeOpen;else if(t==='walk')walkOpen=!walkOpen;
+  else if(t.startsWith('lane:')){const l=lanes[+t.slice(5)];l.dir*=-1;laneButtons()}
+  else if(t.startsWith('shade:')){const a=shadeArms.find(a=>a.key===t.slice(6));a.target=1-a.target;shadeButtons()}
+  roofButtons()});
+renderer.domElement.addEventListener('pointermove',e=>{const now=performance.now();if(e.buttons||now-hoverT<80)return;hoverT=now;
+  renderer.domElement.style.cursor=pick(e)?'pointer':''});
+const views={home:[[38,22,44],[0,6,0]],top:[[0,58,.1],[0,11,0]],sea:[[0,5,42],[0,7,0]],roof:[[12,20,14],[0,12,0]],walk:[[-24,9,-20],[-9,5,-9]]};
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{const[p,t]=views[b.dataset.view];camera.position.set(...p);controls.target.set(...t)});
+camera.position.set(...views.home[0]);controls.target.set(...views.home[1]);
+applyEnv();applyFloors();shadeButtons();laneButtons();
+
+function resize(){const w=box.clientWidth,h=box.clientHeight;if(!w||!h)return;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix()}
+new ResizeObserver(resize).observe(box);window.addEventListener('resize',resize);resize();
+
+const clock=new THREE.Clock();let t=0;
+function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);t+=dt;
+  const pos=seaGeo.attributes.position,A=storm?1.1:.12,sp=storm?1.6:.8;
+  for(let i=0;i<pos.count;i++){const x=seaBase[i*3],z=seaBase[i*3+2];
+    pos.array[i*3+1]=A*Math.sin(z*.35-t*sp)+A*.4*Math.sin(x*.15+z*.2+t*sp*.7)+(storm?.5:0)}
+  pos.needsUpdate=true;seaGeo.computeVertexNormals();
+  if(storm){const a=rainGeo.attributes.position.array;for(let i=0;i<rainN;i++){a[i*3+1]-=.9;a[i*3]+=.25;if(a[i*3+1]<0){a[i*3+1]=40;a[i*3]=(Math.random()-.5)*90}}rainGeo.attributes.position.needsUpdate=true}
+  const fl=.85+.15*Math.sin(t*9);
+  M.fire.emissiveIntensity=(time==='night'?3:1.5)*fl;bbqFire.emissiveIntensity=(time==='night'?2.5:1.2)*fl;
+  shadeArms.forEach(a=>{const tg=storm?1:a.target;a.t+=(tg-a.t)*Math.min(1,dt*2.2);a.segs.forEach(s=>s.g.position.z=s.open+(s.closed-s.open)*a.t)});
+  lanes.forEach(l=>{l.tex.offset.y=(l.tex.offset.y+l.dir*dt*.8+1)%1;
+    l.riders.forEach(r=>{r.u=(r.u+l.dir*dt*.025+1)%1;const[pos,i]=laneAt(l,r.u);r.p.position.copy(pos);
+      const tg=(l.dir>0?l.pts[i+1]:l.pts[i]).clone();tg.y=pos.y;if(tg.distanceToSquared(pos)>1e-4)r.p.lookAt(tg)})});
+  walkK+=((storm||!walkOpen?0:1)-walkK)*Math.min(1,dt*1.5);
+  domeK+=((storm||!domeOpen?0:1)-domeK)*Math.min(1,dt*1.2);
+  walkRoof.forEach(w=>w.m.rotation.z=w.closed+(w.open-w.closed)*walkK);
+  petals.forEach(p=>p.g.rotation.y=p.closed+(p.open-p.closed)*domeK);
+  if(time==='night'&&!storm)scope.rotation.y+=dt*.06;
+  controls.update();renderer.render(scene,camera)}
+animate();
+</script>
+</body>
+</html>
