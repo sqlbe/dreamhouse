@@ -17,10 +17,23 @@
   header h1{font-size:18px;margin:0;font-weight:700}
   header .sub{font-size:13px;color:var(--sub)}
   nav{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+  .uitog{border:1px solid var(--accent);background:#fff;color:var(--accent);padding:7px 12px;border-radius:8px;font-size:13px;cursor:pointer;font-weight:600}
+  .uitog.on{background:var(--accent);color:#fff}
+  body.ui-off .tour,body.ui-off .ctl,body.ui-off .hint{display:none}
+  .ctl{max-height:calc(100% - 24px);overflow:auto}
+  @media (max-width:768px){
+    header{padding:8px 10px;gap:8px}
+    header h1{font-size:16px}
+    header .sub{display:none}
+    nav button,.uitog{padding:6px 9px;font-size:12px}
+    .tour{max-width:200px}
+    .cap{max-width:86%;font-size:12px}
+  }
   nav button,.ctl button{border:1px solid var(--line);background:#fff;color:var(--ink);
     padding:7px 12px;border-radius:8px;font-size:13px;cursor:pointer}
   nav button.on,.ctl button.on{background:var(--accent);border-color:var(--accent);color:#fff}
-  main{height:calc(100% - 58px);position:relative}
+  body{display:flex;flex-direction:column}
+  main{flex:1;min-height:0;position:relative}
   section{display:none;height:100%;overflow:auto}
   section.on{display:block}
   #view3d{width:100%;height:100%;position:relative;overflow:hidden}
@@ -64,6 +77,7 @@
 <header>
   <h1>섬마을 바다집</h1>
   <span class="sub">원통형 3세대 주택 · 지상 3층 + 천문대 옥상 · 3차 설계안</span>
+  <button id="uiToggle" class="uitog">☰ 메뉴</button>
   <nav id="tabs">
     <button data-t="t3d" class="on">3D 모델</button>
     <button data-t="tsite">배치도</button>
@@ -235,6 +249,11 @@
 </main>
 
 <script>
+/* ---------- 메뉴 보이기/숨기기 (휴대폰은 처음에 숨김) ---------- */
+const uiBtn=document.getElementById('uiToggle');
+function setUI(on){document.body.classList.toggle('ui-off',!on);uiBtn.classList.toggle('on',on);uiBtn.textContent=on?'☰ 메뉴 숨기기':'☰ 메뉴 보기'}
+setUI(!(matchMedia('(max-width: 768px)').matches||matchMedia('(pointer: coarse)').matches));
+uiBtn.onclick=()=>setUI(document.body.classList.contains('ui-off'));
 /* ---------- 탭 ---------- */
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));
