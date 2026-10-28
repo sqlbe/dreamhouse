@@ -31,6 +31,19 @@
   .ctl .row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
   .ctl .lbl{width:52px;color:var(--sub)}
   .ctl button{padding:5px 9px;font-size:12px}
+  .tour{position:absolute;left:12px;top:12px;z-index:3;max-height:calc(100% - 24px);overflow:auto;background:rgba(255,255,255,.95);border:1px solid var(--line);border-radius:12px;
+    padding:8px;font-size:12px;max-width:250px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+  .tour .tt{border:0;background:var(--accent);color:#fff;font-weight:700;padding:7px 12px;border-radius:8px;cursor:pointer;font-size:13px;width:100%}
+  .tour .tbody{display:none;margin-top:8px}
+  .tour.open .tbody{display:block}
+  .tour .tg{color:var(--sub);margin:8px 2px 4px;font-weight:600}
+  .tour .row,.tour .col{display:flex;gap:5px;flex-wrap:wrap}
+  .tour .col{flex-direction:column}
+  .tour button[data-tour]{border:1px solid var(--line);background:#fff;padding:5px 9px;border-radius:7px;cursor:pointer;font-size:12px;text-align:left}
+  .tour button[data-tour].on{background:#f2b134;border-color:#f2b134;color:#3a2a1e;font-weight:700}
+  .tour .stop{margin-top:10px;width:100%;border:1px solid #d9534f;color:#d9534f;background:#fff;padding:5px;border-radius:7px;cursor:pointer}
+  .cap{position:absolute;left:50%;top:12px;transform:translateX(-50%);background:rgba(43,43,43,.82);color:#fff;padding:7px 14px;
+    border-radius:20px;font-size:13px;display:none;max-width:60%;text-align:center}
   .hint{position:absolute;right:12px;top:12px;background:rgba(255,255,255,.88);
     border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:12px;color:var(--sub)}
   .sheet{max-width:1100px;margin:0 auto;padding:20px 16px 40px}
@@ -63,7 +76,21 @@
 <main>
   <section id="t3d" class="on">
     <div id="view3d">
-      <div class="hint">드래그: 회전 · 휠: 확대 · 우클릭 드래그: 이동<br>돔·무빙워크 지붕·옥상 터널을 <b>클릭</b>하면 열림/닫힘<br>무빙워크 바닥을 <b>클릭</b>하면 올라감/내려감<br>버튼 켜짐 = 닫힘(덮음) · 태풍 땐 자동으로 닫힘</div>
+      <div class="tour open" id="tourPanel">
+        <button class="tt" id="tourToggle">🚶 구경하기 ▾</button>
+        <div class="tbody">
+          <div class="tg">정문에서 (집 안까지 둘러보기)</div>
+          <div class="row"><button data-tour="g1">1층</button><button data-tour="g2">2층</button><button data-tour="g3">3층</button></div>
+          <div class="tg">엘리베이터 (정문 → 타고 이동)</div>
+          <div class="row"><button data-tour="e2">2층</button><button data-tour="e3">3층</button><button data-tour="er">옥상</button></div>
+          <div class="tg">기타 주요 통로</div>
+          <div class="col"><button data-tour="mw">무빙워크로 옥상까지</button><button data-tour="wr">서쪽 경사로 → 2층 발코니</button>
+            <button data-tour="st">실내 계단으로 옥상까지</button><button data-tour="sp">동쪽 나선계단 → 옥상</button><button data-tour="tr">바다 테라스</button></div>
+          <button class="stop" id="tourStop">■ 멈추기</button>
+        </div>
+      </div>
+      <div class="cap" id="tourCap"></div>
+      <div class="hint">드래그: 회전 · 휠: 확대 · 우클릭 드래그: 이동<br><b>우클릭</b>: 그 위치로 확대 · <b>출입문 우클릭</b>: 로비 안으로 · <b>세대 현관문 우클릭</b>: 집 안으로<br>돔·무빙워크 지붕·옥상 터널을 <b>클릭</b>하면 열림/닫힘<br>1층 출입문·세대 현관문을 <b>클릭</b>하면 열림/닫힘<br>무빙워크 바닥을 <b>클릭</b>하면 올라감/내려감<br>버튼 켜짐 = 닫힘(덮음) · 태풍 땐 자동으로 닫힘</div>
       <div class="ctl">
         <div class="row"><span class="lbl">시간</span>
           <button data-time="day" class="on">낮</button><button data-time="dusk">노을</button><button data-time="night">밤</button></div>
@@ -74,18 +101,18 @@
         <div class="row"><span class="lbl">옥상 터널</span>
           <button data-shade="N">북(비막이)</button><button data-shade="E">동</button><button data-shade="S">남</button><button data-shade="W">서</button><button data-shade="all">전체</button></div>
         <div class="row"><span class="lbl">개폐 지붕</span>
-          <button id="walkBtn">무빙워크 지붕</button><button id="domeBtn">천문대 돔</button></div>
+          <button id="walkBtn">무빙워크 지붕</button><button id="domeBtn">천문대 돔</button><button id="shieldBtn">태풍 보호막</button></div>
         <div class="row"><span class="lbl">무빙워크</span>
           <button data-lane="0"></button><button data-lane="1"></button><button data-lane="2"></button></div>
         <div class="row"><span class="lbl">시점</span>
-          <button data-view="home">전체</button><button data-view="top">위에서</button><button data-view="roof">옥상</button><button data-view="sea">바다에서</button><button data-view="walk">무빙워크</button></div>
+          <button data-view="home">전체</button><button data-view="top">위에서</button><button data-view="roof">옥상</button><button data-view="sea">바다에서</button><button data-view="walk">무빙워크</button><button data-view="entry">입구</button><button data-view="elev">엘리베이터</button><button data-view="back">뒤에서</button></div>
       </div>
     </div>
   </section>
 
   <section id="tsite"><div class="sheet">
     <h2>배치도</h2>
-    <p class="cap">북쪽은 마을 도로, 남쪽은 바다입니다. 육지 쪽(서·북·동)을 무빙워크 2차선이 반원으로 감싸고, 동·서 양쪽에 나선계단이 있습니다. 바다 쪽 반원형 테라스는 지면보다 1.2m 높고, 끝단에 파도를 바다 쪽으로 되돌려 보내는 곡면 방파벽이 있습니다.</p>
+    <p class="cap">북쪽은 마을 도로, 남쪽은 바다입니다. 육지 쪽(서·북·동)을 무빙워크 2차선이 반원으로 감싸고, 동·서 양쪽에 나선계단이 있습니다. 바다 쪽 반원형 테라스는 지면보다 0.2m만 높고(대지를 1m 성토), 끝단에 파도를 바다 쪽으로 되돌려 보내는 곡면 방파벽이 있습니다.</p>
     <div class="paper" id="svgSite"></div>
   </div></section>
 
@@ -105,7 +132,7 @@
 
   <section id="tsec"><div class="sheet">
     <h2>단면도 (북 → 남)</h2>
-    <p class="cap">1층 바닥을 지면보다 1.2m 높은 기단 위에 올렸습니다. 층고는 3.2m이고, 옥상에는 천문대 돔과 아치 그늘막이 있습니다. 왼쪽(북쪽)에 무빙워크 3개 차선의 단면이 보입니다.</p>
+    <p class="cap">대지를 1m 성토하고, 1층 바닥은 지면보다 0.2m만 높게 했습니다. 층고는 3.2m이고, 옥상에는 천문대 돔과 아치 그늘막이 있습니다. 왼쪽(북쪽)에 무빙워크 3개 차선의 단면이 보입니다.</p>
     <div class="paper" id="svgSec"></div>
   </div></section>
 
@@ -117,7 +144,7 @@
     <ul>
       <li><b>원형 평면:</b> 어느 방향에서 바람이 불어도 맞바람 면이 작아 풍하중이 줄어듭니다.</li>
       <li><b>철근콘크리트 벽 300mm + 코어:</b> 엘리베이터·계단 코어가 기둥 역할을 해서 건물이 흔들리지 않게 잡아 줍니다.</li>
-      <li><b>기단 +1.2m:</b> 해일과 월파가 생활층까지 들어오지 않게 합니다.</li>
+      <li><b>대지 1m 성토 + 기단 0.2m:</b> 땅 자체를 해일 가정 높이(+1m)만큼 돋우고, 건물은 그 위에서 20cm만 올렸습니다. 침수에 대비하면서도 어르신이 계단 없이 드나들 수 있습니다.</li>
       <li><b>곡면 방파벽(+2.4m):</b> 위쪽이 바다 쪽으로 말린 형태라 부딪힌 파도를 바다 쪽으로 되돌려 보냅니다.</li>
       <li><b>남쪽 통창:</b> 태풍용 강화 접합유리와 외부 전동 셔터(태풍 시 닫음)를 함께 씁니다.</li>
       <li><b>처마형 발코니:</b> 각 층을 1.5m씩 내민 둥근 처마로 만들어 한옥 처마 느낌을 냈습니다.</li>
@@ -137,7 +164,7 @@
     <div class="note">
       <b>무빙워크(서서 타면 움직이는 경사 보도):</b> 건물의 육지 쪽(서 → 북 → 동)을 반원으로 감싸며 층마다 하나씩 올라갑니다. 바다 쪽 전망은 가리지 않습니다.<br>
       ① 1층 → 2층 (안쪽 차선) · ② 2층 → 3층 (바깥 차선, 반대 방향) · ③ 3층 → 옥상 (안쪽 차선)<br>
-      길이는 차선당 약 31~36m이고, 경사는 약 5~6°로 쇼핑몰 경사 무빙워크(최대 12°)보다 훨씬 완만해서 어르신이나 휠체어도 편합니다. 한 층 오르는 데 약 1분 걸립니다.
+      폭은 <b>2.6m(벨트 2.0m)</b>로 두 사람이 나란히 서고 옆에 짐이나 카트도 같이 실을 수 있습니다. 길이는 차선당 약 31~39m이고, 경사는 약 5~6°로 쇼핑몰 경사 무빙워크(최대 12°)보다 훨씬 완만해서 어르신이나 휠체어도 편합니다. 한 층 오르는 데 약 1분 걸립니다.
     </div>
     <ul>
       <li><b>곡선 무빙워크는 실제로 거의 없습니다.</b> 그래서 3m 정도의 직선 구간 10개를 이어 붙인 다각형 형태로 그렸습니다. 실제 시공도 이 방식(직선 구간 + 짧은 연결부)이 현실적입니다.</li>
@@ -150,7 +177,36 @@
       <li>바닷가라 염분이 많으므로 무빙워크와 개폐 지붕 부품은 스테인리스로 하는 것을 권합니다.</li>
     </ul>
 
-    <h3>4. 층별 구성</h3>
+    <h3>4. 출입구 — 노약자 배려 (계단 없음)</h3>
+    <ul>
+      <li><b>대지를 1m 성토</b>하고 건물(기단·1층 바닥)은 그 지면보다 <b>0.2m만</b> 높게 낮췄습니다. 이 0.2m는 모두 <b>4% 경사(25cm 가는 동안 1cm 오르는 정도)</b>로 이어서, 계단 없이 거의 평지처럼 걸어 다닙니다.</li>
+      <li><b>주출입구는 코어 동쪽</b>입니다. 도로 → 인도 → 동쪽 보행로(폭 2.4m) → 완만한 경사 → 동쪽 1층 데크 → 현관 앞마당 → 자동 미닫이 유리문(폭 2.4m, 문턱 없음) 순서입니다. 보행로가 지나는 무빙워크 아래는 높이가 2.8m 이상 확보되는 곳으로 골랐습니다.</li>
+      <li><b>서쪽 1층 데크</b>(무빙워크 ① 출발점)에도 서쪽 보행로와 4% 경사로를 붙여서, 그쪽에서도 걸어서 바로 올라옵니다.</li>
+      <li>현관 로비는 1층과 같은 높이(+1.22m)라 들어서면 바로 <b>유리 엘리베이터(서쪽)</b>와 <b>계단(북쪽 벽)</b>이 있습니다. 1층 가족은 로비 안쪽(남쪽) <b>101호 현관문</b>으로 바로 들어갑니다. 로비와 집 바닥이 같은 높이라 문턱이 없습니다. 계단은 2층까지 17단으로 이어집니다.</li>
+      <li>원래 있던 북쪽 출입구는 무빙워크 ①이 낮게 지나가는 자리라 없앴습니다.</li>
+      <li>방파벽은 지면보다 1.3m(테라스 바닥보다 1.1m) 높이로, 테라스 식탁에 앉으면 바다가 보이는 높이입니다.</li>
+      <li>3D에서 <b>시점 → 입구</b>, 또는 출입문을 <b>우클릭</b>하면 로비 안으로 들어갑니다.</li>
+    </ul>
+
+    <h3>4-1. 구경하기 (캐릭터 이동 시뮬레이션)</h3>
+    <ul>
+      <li>3D 화면 왼쪽 위 <b>🚶 구경하기</b>에서 코스를 고르면 노란 옷 캐릭터가 직접 걸어가고, 카메라가 뒤를 따라갑니다. 위쪽 자막에 지금 위치가 나옵니다.</li>
+      <li><b>정문에서 1·2·3층</b>: 정문 → 경사로 → 현관 → (2·3층은 유리 엘리베이터) → 세대 현관 → 현관·복도·안방·작은방·드레스룸·욕실·부엌·식당·거실·바다 창까지 둘러봅니다.</li>
+      <li><b>엘리베이터 2층·3층·옥상</b>: 정문에서 엘리베이터를 불러 타고 해당 층 공용홀(옥상은 옥상 출입문 → 천문대 → 남쪽 터널)까지 갑니다.</li>
+      <li><b>기타 통로</b>: 무빙워크 ①②③으로 옥상까지, 서쪽 경사로 → 무빙워크 → 2층 발코니, 동쪽 나선계단으로 옥상까지, 바다 테라스.</li>
+      <li><b>실내 계단</b>은 코어 계단실 안에서 지그재그로 1층 → 2층 → 3층 → 옥상층까지 이어집니다(각 층 계단 구멍 둘레에 유리 난간).</li>
+      <li><b>투명 코어</b>: 엘리베이터·계단이 있는 뒤쪽 코어의 바깥벽(북·동·서)을 유리 커튼월로 바꿨습니다. 계단과 공용홀이 밖에서 보이고, 안에서는 마을과 무빙워크가 보입니다. 벽이 하던 구조 역할은 모서리 기둥 4개, 층마다 테두리 보, 북·동쪽 X자 철골 가새가 대신합니다. 세대 현관 쪽 안벽은 사생활을 위해 그대로 둡니다.</li>
+      <li><b>태풍 보호막</b>: 옥상 가장자리 레일에 접혀 있다가, 태풍 때 <b>파란 철골 갈비대 13개가 먼저 1층 방파벽까지 내려오고</b>, 이어서 갈비대 사이로 <b>강화 접합유리판이 위에서부터 미끄러져 내려와</b> 바다 쪽 발코니·테라스를 통째로 감쌉니다. 3D '태풍' 모드에서 자동으로 작동하고, '태풍 보호막' 버튼으로도 올리고 내립니다.</li>
+      <li><b>구조 보강</b>: 연결 데크·나선계단 쪽 기둥을 600×600 철근콘크리트 기둥 4개와 기초로 바꾸고, 층마다 X자 철골 가새를 넣어 태풍 바람과 지진의 흔들림을 잡습니다. 무빙워크 기둥도 지름 50cm 안팎으로 굵히고 기초를 두었습니다. (실제 크기는 구조계산으로 정해야 합니다.)</li>
+      <li><b>무빙워크 구조</b>: 무빙워크 판 아래에 상자형 받침 거더를 붙이고, 기둥(지름 약 75cm, 기둥머리·기초 포함) 꼭대기마다 가로보를 걸어 양쪽 기둥과 무빙워크를 하나로 묶었습니다.</li>
+      <li><b>틈 막기</b>: 2·3층 연결 데크의 남쪽 난간을 발코니 안전문 끝까지 잇고, 데크와 둥근 건물 벽 사이에 생기던 삼각형 빈틈은 바닥판과 난간으로 메웠습니다. 연결 데크 북쪽 가장자리는 층마다 무빙워크가 실제로 닿는 폭만 열고 나머지는 모두 난간으로 막았습니다(예: 3층 동쪽·2층 서쪽·옥상 서쪽은 전부 막힘).</li>
+      <li><b>나선계단 출입구</b>: 동·서 나선계단은 1층·2층·3층·옥상 높이에 도착하는 칸마다 손잡이와 난간을 끊어 각 층 데크로 드나들고, 그 출입구마다 데크 안쪽으로 열리는 양여닫이 안전문을 달았습니다(평소 닫힘, 클릭하면 열림).</li>
+      <li><b>테라스·발코니 문</b>: 각 세대 거실 남쪽 통창 가운데에 유리 미닫이문을 달아, 집에서 바로 1층은 바다 테라스로, 2·3층은 발코니로 나갑니다(문턱 없음, 클릭하면 열림).</li>
+      <li><b>발코니 끝·옥상 끝 안전문</b>: 무빙워크 데크와 이어지는 2·3층 발코니 양끝과 옥상 양끝에 난간 문을 달아 평소에는 닫혀 있습니다(클릭하면 열림).</li>
+      <li>시뮬레이션 중 앞이 막히면 자동으로 기록합니다. 10개 코스를 모두 돌려 아래를 고쳤습니다: 2·3층·옥상층 공용홀(원래 코어가 꽉 막혀 있었음), 201·301호 현관문, 옥상 자동문, 1층 동쪽 데크와 기단 사이 난간 터 주기, 서쪽 경사로와 1층 데크 사이 난간 터 주기, 나선계단 바닥 입구 난간 정리, 욕실·드레스룸 문짝 방향, 엘리베이터 바닥 문턱 낮춤, 열린 현관문을 피하는 동선.</li>
+    </ul>
+
+    <h3>5. 층별 구성</h3>
     <table>
       <tr><th>층</th><th>용도</th><th>비고</th></tr>
       <tr><td>지상(GL)</td><td>차고 1대, 보행로, 코어 출입구, 나선계단 입구</td><td>차고 지붕은 잔디 지붕</td></tr>
@@ -160,7 +216,7 @@
       <tr><td>옥상 (+10.8m)</td><td>천문대, 십자 아치 그늘막, 바비큐, 텃밭</td><td>엘리베이터, 계단, 무빙워크 ③, 나선계단으로 올라감</td></tr>
     </table>
 
-    <h3>5. 가정한 것 (확인이 필요해요)</h3>
+    <h3>6. 가정한 것 (확인이 필요해요)</h3>
     <ul>
       <li>"28평형"은 <b>한 세대(한 층) 크기</b>로 봤습니다.</li>
       <li>무빙워크와 나선계단이 건물을 감싸면서 필요한 땅이 커졌습니다. 이제 <b>약 40m × 45m(약 550평)</b>를 가정했습니다.</li>
@@ -168,7 +224,7 @@
       <li>그늘막, 돔, 무빙워크 지붕은 모두 전동 모터와 리모컨으로 움직이고, 풍속·빗물 센서와 연동하는 것을 전제로 했습니다. 태풍 때는 옥상 터널 4방향, 돔, 무빙워크 지붕이 모두 자동으로 닫힙니다(3D "태풍" 모드에서 확인할 수 있습니다).</li>
     </ul>
 
-    <h3>6. 다음 단계에서 정할 것</h3>
+    <h3>7. 다음 단계에서 정할 것</h3>
     <ul>
       <li>세대별 방 개수와 크기(1층 어르신 세대: 문턱 없는 욕실 등)</li>
       <li>외장 재료: 노출 콘크리트, 흰 도장, 현무암 등</li>
@@ -212,12 +268,12 @@ function planSVG(){
     s+=T(sx*7.9,-1.2,'연결 데크',.26,'#7a5232')+T(sx*7.9,-.8,sx>0?'→ 나선계단':'나선계단 ←',.2,'#7a5232',400)+T(sx*7.9,-.45,sx>0?'→ 무빙워크':'무빙워크 ←',.2,'#7a5232',400)}
   // 코어
   s+=R(-3,-9.6,3,-5.0,'#f1eee8','#333',.25);
-  s+=R(-2.8,-9.4,-.8,-7.4,'#fff','#555',.05)+L(-2.8,-9.4,-.8,-7.4,.03,'#888')+L(-.8,-9.4,-2.8,-7.4,.03,'#888');
-  s+=T(-1.8,-8.3,'엘리베이터',.26)+T(-1.8,-7.95,'휠체어·침대용',.2,'#777',400);
+  s+=C(-3.85,-7.55,.9,'#e3f2fa','#3a8fc4',.07)+C(-3.85,-7.55,.7,'none','#3a8fc4',.03)+R(-3.1,-8.2,-2.95,-6.9,'#fff','none',0);
+  s+=T(-6.3,-7.75,'유리 엘리베이터',.26,'#2f6f94')+T(-6.3,-7.4,'바깥 조망·휠체어용',.2,'#2f6f94',400);
   s+=R(.6,-9.4,2.8,-5.6,'#fff','#555',.05)+L(1.7,-9.0,1.7,-5.6,.04,'#555');
   for(let y=-9.0;y<=-5.6;y+=.28)s+=L(.6,y,2.8,y,.02,'#999');
   s+=T(1.7,-5.25,'계단',.24,'#555');
-  s+=T(-1.3,-6.15,'공용 홀',.26,'#555');
+  s+=T(-1.2,-7.6,'공용 홀',.26,'#555');
   // 실내 바닥 + 외벽
   s+=C(0,0,RI,'#fff','none',0);
   s+=`<circle r="${RW}" fill="none" stroke="#2b2b2b" stroke-width=".3"/>`;
@@ -279,32 +335,37 @@ function siteSVG(){
   for(let i=0;i<4;i++)s+=`<path d="M-20 ${18.3+i*1.1} q2 -.5 4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0" fill="none" stroke="#fff" stroke-width=".1"/>`;
   s+=T(0,21.6,'바다 (남쪽)',.6,'#2f7fa8');
   // 진입로·차고·보행로
-  s+=R(-8.6,-21,-3.4,-20.5,'#e0ddd6','none',0);
-  s+=R(-9,-20.5,-3,-14.5,'#cfe0bf','#555',.12)+T(-6,-17.6,'차고',.45)+T(-6,-17,'(잔디 지붕)',.3,'#777',400);
-  s+=R(-1,-21,1,-9.6,'#e0ddd6','none',0)+T(2.4,-17.5,'보행로',.32,'#777',500);
-  [[-18,-8],[18,-8],[-19,4],[19,5],[-13,-18],[13,-18],[16,-14],[-17,-14],[7,-17],[-12,8],[12,8]].forEach(([x,y])=>s+=C(x,y,1.1,'#b9d39c','#8fb070',.06)+C(x,y,.15,'#8fb070','none',0));
+    s+=R(-9,-21,-3,-15.6,'#cfe0bf','#555',.12)+T(-6,-18.5,'차고',.45)+T(-6,-17.9,'(잔디 지붕)',.3,'#777',400);
+  s+=R(-3,-21,12,-19.8,'#e0ddd6','none',0)+R(9.4,-19.8,11.8,-7.2,'#e0ddd6','none',0)+R(9.4,-7.2,11.8,-2.8,'#ecdcbc','none',0);
+  s+=R(-19.6,-21,-18.2,0,'#e0ddd6','none',0)+R(-19.6,0,-15.3,2.4,'#ecdcbc','none',0)+R(-15.3,0,-12.4,2.4,'#e2cda9','#9a6b43',.04);
+  s+=T(13.2,-13.5,'보행로',.3,'#777',500)+T(13.4,-5.2,'완만한 경사 4%',.26,'#a0623a',500)+T(-17.4,3.1,'완만한 경사 4%',.26,'#a0623a',500);
+  s+=R(12.5,-20.6,14.3,-20.05,'#4b4d50','none',0)+T(13.4,-19.6,'표지석',.24,'#555',400);
+  s+=R(3,-8.8,7.4,-4.4,'#d9d0c1','none',0)+R(2.9,-7.8,3.1,-5.4,'#c0392b','none',0)+T(5.3,-9.25,'주출입구 (단차 0)',.3,'#c0392b')+T(5.3,-3.95,'현관 앞마당',.24,'#777',400);
+  s+=`<defs><marker id="ar" markerWidth="4" markerHeight="4" refX="2" refY="2" orient="auto" markerUnits="strokeWidth"><path d="M0 0 L4 2 L0 4Z" fill="#c0392b"/></marker></defs>`;
+  s+=`<path d="M10.6 -18.5 L10.6 -3.4 Q10.6 -2 8.6 -2.6 L7.6 -5.4" fill="none" stroke="#c0392b" stroke-width=".12" stroke-dasharray=".4 .25" marker-end="url(#ar)"/>`;
+  [[-21,-8],[18,-8],[-21,5],[19,5],[-13,-18],[14,-17],[16,-13],[-16,-14],[7,-17],[-9,8],[12,8]].forEach(([x,y])=>s+=C(x,y,1.1,'#b9d39c','#8fb070',.06)+C(x,y,.15,'#8fb070','none',0));
   // 테라스·기단
   s+=`<path d="M-10.5 0 A10.5 10.5 0 0 0 10.5 0Z" fill="#ead8bb" stroke="none"/>`;
   s+=C(0,0,7.2,'#ead8bb','none',0);
   s+=`<path d="M-10.5 0 A10.5 10.5 0 0 0 10.5 0" fill="none" stroke="#6b6b6b" stroke-width=".45"/>`;
-  s+=T(0,10.0,'곡면 방파벽 (+2.4m)',.4,'#555');
-  s+=T(0,6.0,'바다 전망 테라스 (+1.2m)',.45,'#7a5232');
+  s+=T(0,10.0,'곡면 방파벽 (지면보다 1.3m)',.4,'#555');
+  s+=T(0,6.0,'바다 전망 테라스 (지면보다 0.2m)',.45,'#7a5232');
   const tset=(x,y)=>{let t=`<circle cx="${x}" cy="${y}" r="1.35" fill="none" stroke="#c9a77c" stroke-width=".05" stroke-dasharray=".2 .15"/>`+C(x,y,.6,'#fff','#7a5232',.06);
     [[0,-.95],[0,.95],[-.95,0],[.95,0]].forEach(([a,b])=>t+=R(x+a-.22,y+b-.22,x+a+.22,y+b+.22,'#fff','#7a5232',.04));return t};
   s+=tset(0,8.0)+tset(-5.2,6.8)+tset(5.2,6.8);
   // 무빙워크 (육지 쪽을 감싸는 2차선)
-  s+=`<path d="${sector(10.15,11.85,190,350)}" fill="#cfd4db" stroke="#6b7480" stroke-width=".05"/>`;
-  s+=`<path d="${sector(11.95,13.65,190,350)}" fill="#bcc3cc" stroke="#6b7480" stroke-width=".05"/>`;
-  for(const a of [205,235,300,330])s+=arrowAt(11,a,1,'#2f7fa8')+arrowAt(12.8,a,-1,'#c0692c');
-  s+=T(0,-10.85,'무빙워크 ①1층→2층 · ③3층→옥상',.3,'#244e66')+T(0,-12.68,'무빙워크 ②2층→3층 · 모두 투명 개폐 지붕',.3,'#8a4a1f');
+  s+=`<path d="${sector(9.7,12.3,190,350)}" fill="#cfd4db" stroke="#6b7480" stroke-width=".05"/>`;
+  s+=`<path d="${sector(12.5,15.1,190,350)}" fill="#bcc3cc" stroke="#6b7480" stroke-width=".05"/>`;
+  for(const a of [205,235,300,330])s+=arrowAt(11,a,1,'#2f7fa8')+arrowAt(13.8,a,-1,'#c0692c');
+  s+=T(0,-10.85,'무빙워크 ①1층→2층 · ③3층→옥상',.3,'#244e66')+T(0,-13.68,'무빙워크 ②2층→3층 · 폭 2.6m · 투명 개폐 지붕',.3,'#8a4a1f');
   // 연결 데크·나선계단
   for(const sx of[1,-1]){
-    s+=R(sx>0?5.6:-13.8,-2.8,sx>0?13.8:-5.6,1.85,'#e2cda9','#9a6b43',.06);
-    s+=spiralMark(sx*15.2,-.5)+T(sx*15.2,1.45,'나선계단',.3,'#555')+T(sx*9.3,-1.7,'층별 연결 데크',.3,'#7a5232');
+    s+=R(sx>0?5.6:-15.3,-2.8,sx>0?15.3:-5.6,1.85,'#e2cda9','#9a6b43',.06);
+    s+=spiralMark(sx*16.7,-.5)+T(sx*16.7,1.45,'나선계단',.3,'#555')+T(sx*9.3,-1.7,'층별 연결 데크',.3,'#7a5232');
   }
   // 코어·주거동
   s+=`<circle r="7.1" fill="none" stroke="#9a6b43" stroke-width=".05" stroke-dasharray=".25 .2"/>`;
-  s+=R(-3,-9.6,3,-5,'#d8d2c6','#444',.12)+T(0,-8.3,'코어',.4)+T(0,-7.7,'엘리베이터·계단',.3,'#666',400);
+  s+=C(-3.85,-7.55,.9,'#e3f2fa','#3a8fc4',.08)+R(-3,-9.6,3,-5,'#d8d2c6','#444',.12)+T(0,-8.3,'코어',.4)+T(0,-7.7,'엘리베이터·계단',.3,'#666',400);
   s+=C(0,0,5.5,'#fff','#333',.25)+T(0,-.4,'주거동',.55)+T(0,.35,'1~3층 · 층마다 1세대',.35,'#666',400)+T(0,1.0,'옥상 천문대 · 아치 그늘막',.35,'#2f7fa8',500);
   s+=north(17.5,-18.5)+scale(-19,9);
   return s+'</svg>';
@@ -330,7 +391,7 @@ function roofSVG(){
   // 남쪽 식탁
   s+=R(-.45,3.4,.45,6.2,'#fff','#7a5232',.05);for(const y of[3.8,4.8,5.8])for(const x of[-.8,.8])s+=R(x-.18,y-.18,x+.18,y+.18,'#fff','#7a5232',.03);
   // 코어
-  s+=R(-3,-9.6,3,-4.9,'#ebe7df','#444',.12)+T(0,-7.7,'코어',.36)+T(0,-7.25,'엘리베이터·계단 출입',.24,'#666',400)+R(-.6,-5.0,.6,-4.85,'#7a5232','none',0);
+  s+=C(-3.85,-7.55,.9,'#e3f2fa','#3a8fc4',.06)+R(-3,-9.6,3,-4.9,'#ebe7df','#444',.12)+T(0,-7.7,'코어',.36)+T(0,-7.25,'엘리베이터·계단 출입',.24,'#666',400)+R(-.6,-5.0,.6,-4.85,'#7a5232','none',0);
   // 천문대 돔
   s+=C(0,0,2.75,'#e6f3fa','#5d8fae',.1);for(let a=22.5;a<360;a+=45){const[u,v]=P(2.75,a);s+=L(0,0,u,v,.04,'#7aa9c4')}
   s+=`<g transform="rotate(-140)"><rect x="-.15" y="-.9" width=".3" height="1.2" fill="#fff" stroke="#555" stroke-width=".04"/></g>`+C(0,0,.25,'#555','none',0);
@@ -355,23 +416,23 @@ function roofSVG(){
 
 /* ---------- 단면도 ---------- */
 function secSVG(){
-  let s=`<svg viewBox="-15 -18.4 33.5 21.9" xmlns="http://www.w3.org/2000/svg">`;
+  let s=`<svg viewBox="-16.6 -18.4 35.1 21.9" xmlns="http://www.w3.org/2000/svg">`;
   const E=e=>-e;
-  s+=R(-15,-18.4,18.5,3.5,'#f7fbfd','none',0);
-  s+=`<polygon points="-15,0 11,0 18.5,1.13 18.5,3.5 -15,3.5" fill="#e9e3d3"/>`;
+  s+=R(-16.6,-18.4,18.5,3.5,'#f7fbfd','none',0);
+  s+=`<polygon points="-16.6,-1 11,-1 18.5,1.0 18.5,3.5 -16.6,3.5" fill="#e9e3d3"/>`;
   s+=`<polygon points="14.6,.69 18.5,.69 18.5,3.5 14.6,3.5" fill="#bfe0ef"/><path d="M14.8 .69 q.5 -.2 1 0 t1 0 t1 0 t1 0" fill="none" stroke="#2f7fa8" stroke-width=".04"/>`;
-  s+=`<line x1="-15" y1="0" x2="11" y2="0" stroke="#666" stroke-width=".05"/><line x1="11" y1="0" x2="18.5" y2="1.13" stroke="#666" stroke-width=".05"/>`;
-  s+=`<line x1="-15" y1="${E(1.0)}" x2="18.5" y2="${E(1.0)}" stroke="#2f7fa8" stroke-width=".04" stroke-dasharray=".3 .2"/>`+T(-14.1,E(1.25),'해일 +1.0m',.26,'#2f7fa8',500);
+  s+=`<line x1="-16.6" y1="-1" x2="11" y2="-1" stroke="#666" stroke-width=".05"/><line x1="11" y1="-1" x2="18.5" y2="1.0" stroke="#666" stroke-width=".05"/><line x1="-16.6" y1="0" x2="11" y2="0" stroke="#aaa" stroke-width=".03" stroke-dasharray=".2 .2"/>`;
+  s+=`<line x1="-16.6" y1="${E(1.0)}" x2="18.5" y2="${E(1.0)}" stroke="#2f7fa8" stroke-width=".04" stroke-dasharray=".3 .2"/>`+T(-15.0,E(1.35),'성토 지면 = 해일 높이 +1.0m',.26,'#2f7fa8',500);
   // 기단·방파벽
   s+=R(-7.2,-1.2,10.5,0,'#d8d2c6','#555',.05);
   s+=`<polygon points="10.3,-1.2 10.3,-2.1 10.6,-2.3 10.95,-2.25 11.15,-2.0 10.9,-1.6 10.75,-1.0 10.75,0 10.3,0" fill="#b9b4aa" stroke="#555" stroke-width=".04"/>`;
-  s+=T(11.3,E(2.7),'곡면 방파벽 +2.4m',.3,'#555',500);
+  s+=T(11.3,E(2.7),'곡면 방파벽 (지면보다 1.3m)',.3,'#555',500);
   // 무빙워크 (북측 단면)
-  [[-10.0,9.05],[-11.9,9.05],[-13.8,5.85]].forEach(([x,h])=>s+=L(x,0,x,E(h),.1,'#9aa3ad'));
-  [[-11.85,-10.15,2.82],[-11.85,-10.15,9.37],[-13.65,-11.95,6.17]].forEach(([a,b,e])=>s+=R(a,E(e),b,E(e)+.3,'#7b8591','none',0)+`<path d="M${a} ${E(e+1.15)} A${(b-a)/2} 1.1 0 0 1 ${b} ${E(e+1.15)}" fill="#e3f2fa" fill-opacity=".6" stroke="#7aa9c4" stroke-width=".04"/>`+L(a,E(e),a,E(e+1.15),.03,'#7aa9c4')+L(b,E(e),b,E(e+1.15),.03,'#7aa9c4'));
-  s+=T(-12.0,E(10.2),'무빙워크',.32,'#244e66')+T(-11,E(3.4),'①',.3,'#244e66')+T(-12.8,E(6.75),'②',.3,'#8a4a1f')+T(-11,E(9.95),'③',.3,'#244e66');
+  [[-9.6,9.05],[-12.4,9.05],[-15.2,5.85]].forEach(([x,h])=>s+=L(x,0,x,E(h),.1,'#9aa3ad'));
+  [[-12.3,-9.7,2.82],[-12.3,-9.7,9.37],[-15.1,-12.5,6.17]].forEach(([a,b,e])=>s+=R(a,E(e),b,E(e)+.3,'#7b8591','none',0)+`<path d="M${a} ${E(e+1.15)} A${(b-a)/2} 1.1 0 0 1 ${b} ${E(e+1.15)}" fill="#e3f2fa" fill-opacity=".6" stroke="#7aa9c4" stroke-width=".04"/>`+L(a,E(e),a,E(e+1.15),.03,'#7aa9c4')+L(b,E(e),b,E(e+1.15),.03,'#7aa9c4'));
+  s+=T(-12.4,E(10.9),'무빙워크 (폭 2.6m)',.32,'#244e66')+T(-11,E(4.3),'①',.3,'#244e66')+T(-13.8,E(7.6),'②',.3,'#8a4a1f')+T(-11,E(10.8),'③',.3,'#244e66');
   // 코어
-  s+=R(-9.6,E(13.8),-4.9,0,'#ebe7df','#444',.1)+T(-7.25,E(7),'코어',.38)+T(-7.25,E(6.4),'엘리베이터',.28,'#666',400)+T(-7.25,E(6.0),'+ 계단',.28,'#666',400);
+  s+=R(-9.6,E(13.8),-4.9,0,'#ebe7df','#444',.1)+T(-7.25,E(7),'코어',.38)+T(-7.25,E(6.4),'유리 엘리베이터(서쪽)',.24,'#2f6f94',400)+T(-7.25,E(6.0),'+ 계단',.28,'#666',400);
   // 층
   const lv=[1.2,4.4,7.6,10.8];
   lv.forEach((e,i)=>{
@@ -399,10 +460,10 @@ function secSVG(){
   s+=R(-.45,E(11.75),.45,E(11.7),'#7a5232','none',0);
   s+=T(0,E(15.6),'투명 개폐 돔',.34)+T(4.8,E(15.0),'아치 그늘막(남)',.28,'#7a5232')+T(-3.75,E(15.0),'비 차단(북)',.26,'#2f6f94');
   // 레벨
-  [['지면 GL ±0',0],['1층 +1.2',1.2],['2층 +4.4',4.4],['3층 +7.6',7.6],['옥상 +10.8',10.8],['그늘막 +14.4',14.4],['돔 꼭대기 +17.3',17.3]].forEach(([t,e])=>{
+  [['원지반 ±0',0],['1층 +1.2 (지면보다 0.2)',1.2],['2층 +4.4',4.4],['3층 +7.6',7.6],['옥상 +10.8',10.8],['그늘막 +14.4',14.4],['돔 꼭대기 +17.3',17.3]].forEach(([t,e])=>{
     s+=`<line x1="7.6" y1="${E(e)}" x2="12.6" y2="${E(e)}" stroke="#999" stroke-width=".025" stroke-dasharray=".15 .12"/>`;
     s+=`<text x="12.8" y="${E(e)+.12}" font-size=".34" fill="#555" font-family="Malgun Gothic,sans-serif">▽ ${t}m</text>`});
-  s+=T(-12.6,E(16.6),'← 북 (도로)',.32,'#777',500)+T(17.2,E(3.2),'남 (바다) →',.32,'#2f7fa8',500);
+  s+=T(-14.2,E(16.6),'← 북 (도로)',.32,'#777',500)+T(17.2,E(3.2),'남 (바다) →',.32,'#2f7fa8',500);
   return s+'</svg>';
 }
 document.getElementById('svgPlan').innerHTML=planSVG();
@@ -432,7 +493,7 @@ const camera=new THREE.PerspectiveCamera(42,1,.1,1200);
 camera.position.set(30,17,36);
 const controls=new OrbitControls(camera,renderer.domElement);
 controls.target.set(0,5.5,0); controls.enableDamping=true; controls.maxPolarAngle=Math.PI*.49;
-controls.minDistance=6; controls.maxDistance=160;
+controls.minDistance=.3; controls.maxDistance=160;
 
 const hemi=new THREE.HemisphereLight(0xffffff,0x9c8a68,.9); scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xffffff,2.4); sun.castShadow=true;
@@ -470,12 +531,18 @@ const D=d=>d*Math.PI/180;
 /* 대지 */
 const steel=std(0x3b3f45,{metalness:.5,roughness:.45});
 M.dark=std(0x2a2d31);
-add(new THREE.PlaneGeometry(500,250).rotateX(-Math.PI/2),M.grass,0,0,11-125,scene).castShadow=false;
+add(new THREE.PlaneGeometry(500,250).rotateX(-Math.PI/2),M.grass,0,1.0,11-125,scene).castShadow=false;   // 대지 1m 성토
 {const g=new THREE.PlaneGeometry(500,14,1,1).rotateX(-Math.PI/2);const p=g.attributes.position;
- for(let i=0;i<p.count;i++){const z=p.getZ(i)+18;p.setZ(i,z);p.setY(i,-(z-11)/12*1.8)}g.computeVertexNormals();add(g,M.sand,0,0,0).castShadow=false}
-box3(-250,250,0,.03,-24,-21,M.road);
-box3(-8.6,-3.4,0,.04,-21,-20.5,M.concrete);
-box3(-1,1,0,.04,-21,-9.6,M.concrete);
+ for(let i=0;i<p.count;i++){const z=p.getZ(i)+18;p.setZ(i,z);p.setY(i,1.0-(z-11)/14*2.8)}g.computeVertexNormals();add(g,M.sand,0,0,0).castShadow=false}
+box3(-250,250,1.0,1.03,-24,-21,M.road);
+// 보행로: 차고 앞 인도 → 동쪽 보행로 → 완만한 경사(4%) → 동쪽 1층 데크 → 현관
+box3(-3,12,1.0,1.04,-21,-19.8,M.concrete);
+box3(9.4,11.8,1.0,1.04,-19.8,-7.2,M.concrete);
+{const m=add(new THREE.BoxGeometry(2.4,.06,4.45),std(0xe2d6bf),10.6,1.11,-5.0);m.rotation.x=-Math.atan2(.18,4.4)}
+// 서쪽 보행로 → 완만한 경사(4%) → 서쪽 1층 데크
+box3(-19.6,-18.2,1.0,1.04,-21,0,M.concrete);
+{const m=add(new THREE.BoxGeometry(4.35,.06,2.4),std(0xe2d6bf),-17.45,1.11,1.2);m.rotation.z=Math.atan2(.18,4.3)}
+box3(-15.3,-12.4,1.0,1.22,0,2.4,std(0xd9d0c1));
 const seaGeo=new THREE.PlaneGeometry(500,240,200,96).rotateX(-Math.PI/2);seaGeo.translate(0,0,16+120);
 const seaBase=Float32Array.from(seaGeo.attributes.position.array);
 const sea=add(seaGeo,M.sea,0,-1.2,0);sea.castShadow=false;
@@ -483,13 +550,17 @@ const sea=add(seaGeo,M.sea,0,-1.2,0);sea.castShadow=false;
 /* 나무 */
 function tree(x,z,s=1,parent=scene,y=0){add(new THREE.CylinderGeometry(.12*s,.18*s,1.6*s,8),M.dwood,x,y+.8*s,z,parent);
   add(new THREE.SphereGeometry(1.1*s,12,10),M.plant,x,y+2.2*s,z,parent)}
-[[-18,-8],[18,-8],[-19,4],[19,5],[-13,-18],[13,-18],[16,-14],[-17,-14],[7,-17],[-12,8],[12,8]].forEach(([x,z])=>tree(x,z,1+Math.random()*.4));
+[[-21,-8],[18,-8],[-21,5],[19,5],[-13,-18],[14,-17],[16,-13],[-16,-14],[7,-17],[-9,8],[12,8]].forEach(([x,z])=>tree(x,z,1+Math.random()*.4,scene,1.0));
 
 /* 기단·테라스·방파벽 */
-add(new THREE.CylinderGeometry(7.2,7.2,1.2,72),M.stone,0,.6,0);
+// 기단: 원형이되 코어 자리(북쪽 x±3, z<-4.9)는 비워 지상 현관 로비가 들어가게 함
+function podiumGeo(r,h){const vz=Math.sqrt(r*r-9),sh=new THREE.Shape();
+  sh.moveTo(3,4.9);sh.lineTo(3,vz);sh.absarc(0,0,r,Math.atan2(vz,3),Math.atan2(vz,-3),true);sh.lineTo(-3,4.9);sh.lineTo(3,4.9);
+  return new THREE.ExtrudeGeometry(sh,{depth:h,bevelEnabled:false,curveSegments:72}).rotateX(-Math.PI/2)}
+add(podiumGeo(7.2,1.2),M.stone,0,0,0);
 add(new THREE.CylinderGeometry(10.5,10.5,1.2,72,1,false,-Math.PI/2,Math.PI),M.stone,0,.6,0);
 add(new THREE.CylinderGeometry(10.3,10.3,.04,72,1,false,-Math.PI/2,Math.PI),M.deck,0,1.22,0);
-add(new THREE.CylinderGeometry(7.1,7.1,.04,72),M.deck,0,1.22,0);
+add(podiumGeo(7.1,.04),M.deck,0,1.2,0);
 {const pts=[[10.3,1.2],[10.3,2.1],[10.6,2.3],[10.95,2.25],[11.15,2.0],[10.9,1.6],[10.75,1.0],[10.75,0],[10.3,0],[10.3,1.2]].map(([r,y])=>new THREE.Vector2(r,y));
  add(new THREE.LatheGeometry(pts,96,-Math.PI/2,Math.PI),std(0xc4beb2,{side:THREE.DoubleSide}),0,0,0)}
 
@@ -507,18 +578,175 @@ function tableSet(x,z){const y=1.24;
 tableSet(0,8.0);tableSet(-5.2,6.8);tableSet(5.2,6.8);
 
 /* 차고 */
-box3(-9,-3,0,3,-20.5,-14.5,M.wall);
-box3(-9.05,-2.95,3,3.15,-20.55,-14.45,M.grass);
-box3(-8.4,-3.6,0,2.4,-20.53,-20.5,std(0x8a8580));
-for(let y=.3;y<2.4;y+=.3)box3(-8.4,-3.6,y,y+.02,-20.55,-20.53,std(0x6f6a64));
+box3(-9,-3,1.0,4.0,-21,-15.6,M.wall);
+box3(-9.05,-2.95,4.0,4.15,-21.05,-15.55,M.grass);
+box3(-8.4,-3.6,1.0,3.4,-21.03,-21.0,std(0x8a8580));
+for(let y=1.3;y<3.4;y+=.3)box3(-8.4,-3.6,y,y+.02,-21.05,-21.03,std(0x6f6a64));
 
 /* 코어 */
-box3(-3,3,0,13.8,-9.6,-4.9,M.concrete);
-box3(.9,2.5,1.5,13.2,-9.63,-9.6,M.glass);
+// 대지를 1m 성토(지면 +1.0)해서 기단·1층 바닥(+1.22)이 지면보다 0.2m만 높음
+const G0=1.0,L1=1.22;
+// 코어 바깥벽(북·동·서)은 투명 유리 커튼월, 구조는 모서리 기둥 + X자 가새가 맡음
+const coreGlass=new THREE.MeshPhysicalMaterial({color:0xcfe8f3,transparent:true,opacity:.26,roughness:.05,metalness:.1,side:THREE.DoubleSide,depthWrite:false});
+const gbox=(x1,x2,y1,y2,z1,z2)=>add(new THREE.BoxGeometry(x2-x1,y2-y1,z2-z1),coreGlass,(x1+x2)/2,(y1+y2)/2,(z1+z2)/2,scene,false);
+box3(-3,3,0,L1,-9.6,-4.9,M.concrete);                      // 코어 기초(지면 아래~1층 바닥)
+// ── 코어 2층·3층·옥상층 공용홀: 엘리베이터 → 세대 현관(201·301) / 옥상 출입문 ──
+const HALLS=[4.57,7.77,10.97],hallFloor=std(0xc9a57c,{roughness:.6});
+gbox(-3,3,3.82,13.8,-9.53,-9.47);                                                 // 북쪽 유리벽
+gbox(2.87,2.93,3.82,13.8,-9.4,-5.6);                                              // 동쪽 유리벽
+gbox(-2.93,-2.87,3.82,13.8,-9.4,-8.3);gbox(-2.93,-2.87,3.82,13.8,-6.8,-5.6);   // 서쪽 유리벽(엘리베이터 문 양옆)
+[[3.82,4.57],[6.77,7.77],[9.97,10.97],[13.17,13.8]].forEach(([a,c])=>gbox(-2.93,-2.87,a,c,-8.3,-6.8));
+box3(-3,-.62,3.82,13.8,-5.8,-5.6,M.concrete);box3(.62,3,3.82,13.8,-5.8,-5.6,M.concrete);    // 남쪽 벽(현관·옥상문 개구부 양옆)
+[[3.82,4.57],[6.72,7.77],[9.92,10.97],[13.12,13.8]].forEach(([a,c])=>box3(-.62,.62,a,c,-5.8,-5.6,M.concrete));
+box3(-3,-2.3,3.82,10.8,-5.6,-4.9,M.concrete);box3(2.3,3,3.82,10.8,-5.6,-4.9,M.concrete);     // 원통 건물과 맞닿는 모서리
+box3(-2.8,2.8,3.82,4.57,-8.3,-5.6,M.concrete);box3(-2.8,-1.25,4.27,4.57,-9.4,-8.3,M.concrete);   // 로비 천장 + 2층 홀 바닥(계단 도착참)
+// 3층 바닥: 2→3층 계단(z -8.3~-7.3)과 3층→옥상 계단(z -9.4~-8.3) 자리는 비움, 동쪽 끝은 계단참
+box3(-2.8,2.8,7.47,7.77,-7.3,-5.6,M.concrete);box3(-2.8,-1.3,7.47,7.77,-9.4,-7.3,M.concrete);box3(2.2,2.8,7.47,7.77,-9.4,-7.3,M.concrete);
+// 옥상층 홀 바닥: 3층→옥상 계단 자리만 비움
+box3(-2.8,2.8,10.67,10.97,-8.3,-5.6,M.concrete);box3(-2.8,-1.3,10.67,10.97,-9.4,-8.3,M.concrete);box3(2.2,2.8,10.67,10.97,-9.4,-8.3,M.concrete);
+box3(-2.8,2.8,4.55,4.57,-8.3,-5.6,hallFloor);box3(-2.8,-1.25,4.55,4.57,-9.4,-8.3,hallFloor);
+box3(-2.8,2.8,7.75,7.77,-7.3,-5.6,hallFloor);box3(-2.8,-1.3,7.75,7.77,-9.4,-7.3,hallFloor);box3(2.2,2.8,7.75,7.77,-9.4,-7.3,hallFloor);
+box3(-2.8,2.8,10.95,10.97,-8.3,-5.6,hallFloor);box3(-2.8,-1.3,10.95,10.97,-9.4,-8.3,hallFloor);box3(2.2,2.8,10.95,10.97,-9.4,-8.3,hallFloor);
+// 계단 2·3구간 (각 16단, 단높이 0.2m)
+{const stp=std(0xe2dccf),rl=std(0x3b3f45,{metalness:.5}),run=3.5/16;
+ for(let k=0;k<16;k++)box3(-1.3+k*run,-1.3+(k+1)*run,4.57,4.57+(k+1)*.2,-8.3,-7.3,stp);      // 2층→3층 (서→동)
+ for(let k=0;k<16;k++)box3(2.2-(k+1)*run,2.2-k*run,7.77,7.77+(k+1)*.2,-9.4,-8.3,stp);        // 3층→옥상층 (동→서)
+ const sl=(x1,y1,x2,y2,z)=>{const L=Math.hypot(x2-x1,y2-y1),m=add(new THREE.BoxGeometry(L,.05,.05),rl,(x1+x2)/2,(y1+y2)/2,z);m.rotation.z=Math.atan2(y2-y1,x2-x1)};
+ sl(-1.1,4.57+1.1,2.1,7.77+.9,-7.32);sl(2.0,7.77+1.1,-1.2,10.97+.9,-8.32);                 // 계단 손잡이
+ // 3층·옥상층 계단 구멍 둘레 난간(유리)
+ add(new THREE.BoxGeometry(3.5,1.0,.03),M.rail,.45,7.77+.5,-7.3,scene,false);box3(-1.3,2.2,8.75,8.8,-7.33,-7.27,M.wood);
+ add(new THREE.BoxGeometry(.03,1.0,2.1),M.rail,-1.3,7.77+.5,-8.35,scene,false);box3(-1.33,-1.27,8.75,8.8,-9.4,-7.3,M.wood);
+ add(new THREE.BoxGeometry(3.5,1.0,.03),M.rail,.45,10.97+.5,-8.3,scene,false);box3(-1.3,2.2,11.95,12.0,-8.33,-8.27,M.wood)}
+box3(-.62,.62,10.95,10.97,-5.6,-4.9,hallFloor);                                   // 옥상문 → 옥상 바닥
+add(new THREE.BoxGeometry(4.05,1.0,.03),M.rail,.775,5.07,-8.3,scene,false);box3(-1.25,2.8,5.55,5.6,-8.33,-8.27,M.wood);   // 2층 계단 난간
+{const hp=new THREE.MeshStandardMaterial({color:0xfff4dc,emissive:0xffe2b0,emissiveIntensity:.8});
+ [[4.57,7.47],[7.77,10.67],[10.97,13.8]].forEach(([y,c])=>{box3(-1.2,1.2,c-.03,c,-7.2,-6.0,hp);
+   const l=new THREE.PointLight(0xffe2b0,5,8,1.4);l.position.set(0,c-.4,-7.2);scene.add(l);
+   add(new THREE.CylinderGeometry(.22,.18,.45,12),std(0xb98b5e),2.3,y+.22,-6.2);add(new THREE.SphereGeometry(.4,10,8),M.plant,2.3,y+.75,-6.2)})}
+// 옥상 출입문(자동 미닫이 유리문, 클릭해도 열림)
+const roofDoor={k:0,open:false,pos:new THREE.Vector3(0,10.97,-5.7)},roofDoorPanels=[];
+{const g2=new THREE.MeshPhysicalMaterial({color:0xcfe6f2,transparent:true,opacity:.3,roughness:.05,side:THREE.DoubleSide,depthWrite:false});
+ for(const sx of[-1,1]){const dp=new THREE.Group();dp.position.set(sx*.31,10.97,-5.7);dp.userData.toggle='roofdoor';scene.add(dp);
+   add(new THREE.BoxGeometry(.6,2.12,.03),g2,0,1.06,0,dp,false);box3(-.3,.3,2.08,2.12,-.02,.02,steel,dp);box3(-.3,.3,0,.04,-.02,.02,steel,dp);roofDoorPanels.push({dp,sx})}}
 box3(-3.05,3.05,13.8,14.0,-9.65,-4.85,M.stone);
 box3(2.0,2.6,13.8,14.9,-7.0,-6.4,M.stone); // 벽난로 연도 배출구
-box3(-.9,.9,0,2.4,-9.63,-9.6,std(0x7a5232)); // 1층 출입문(북측)
-box3(-.6,.6,10.97,13.1,-4.9,-4.86,std(0x7a5232)); // 옥상 출입문
+// ── 현관 로비 (코어 1층, 바닥 +1.22 = 1층과 같은 높이) ──
+// 벽: 서(엘리베이터 개구부) · 동(주출입문 개구부) · 남 · 북
+gbox(-2.93,-2.87,L1,3.82,-9.4,-8.3);gbox(-2.93,-2.87,L1,3.82,-6.8,-5.6);gbox(-2.93,-2.87,L1+2.2,3.82,-8.3,-6.8);
+gbox(2.87,2.93,L1,3.82,-9.4,-8.0);gbox(2.87,2.93,L1,3.82,-5.6,-5.4);gbox(2.87,2.93,L1+2.3,3.82,-8.0,-5.4);
+box3(-3,-.62,L1,3.82,-5.8,-5.6,M.concrete);box3(.62,3,L1,3.82,-5.8,-5.6,M.concrete);box3(-.62,.62,L1+2.15,3.82,-5.8,-5.6,M.concrete);
+gbox(-3,3,L1,3.82,-9.53,-9.47);
+// 구조 프레임: 모서리 기둥 4개(300각) + 층 테두리 보 + 북·동쪽 X자 가새 + 유리 멀리언
+{const fr=std(0x3b3f45,{metalness:.55,roughness:.35});
+ for(const[x1,x2,z1,z2]of[[2.7,3,-9.6,-9.3],[-3,-2.7,-9.6,-9.3],[2.7,3,-5.2,-4.9],[-3,-2.7,-5.9,-5.6]])box3(x1,x2,0,13.8,z1,z2,M.concrete);
+ for(const y of[3.82,7.47,10.67,13.5]){box3(-3,3,y,y+.3,-9.6,-9.4,M.concrete);box3(2.8,3,y,y+.3,-9.4,-5.6,M.concrete);box3(-3,-2.8,y,y+.3,-9.4,-8.3,M.concrete);box3(-3,-2.8,y,y+.3,-6.8,-5.6,M.concrete)}
+ const xb=(a,b,z)=>{const L=Math.hypot(b[0]-a[0],b[1]-a[1]),m=add(new THREE.BoxGeometry(L,.1,.1),fr,(a[0]+b[0])/2,(a[1]+b[1])/2,z);m.rotation.z=Math.atan2(b[1]-a[1],b[0]-a[0])};
+ const zb=(a,b,x)=>{const L=Math.hypot(b[0]-a[0],b[1]-a[1]),m=add(new THREE.BoxGeometry(.1,.1,L),fr,x,(a[1]+b[1])/2,(a[0]+b[0])/2);m.rotation.x=-Math.atan2(b[1]-a[1],b[0]-a[0])};
+ for(const[y1,y2]of[[L1,3.82],[4.12,7.47],[7.77,10.67],[10.97,13.5]]){xb([-2.7,y1],[2.7,y2],-9.56);xb([-2.7,y2],[2.7,y1],-9.56)}
+ for(const[y1,y2]of[[4.12,7.47],[7.77,10.67],[10.97,13.5]]){zb([-9.3,y1],[-5.6,y2],2.96);zb([-9.3,y2],[-5.6,y1],2.96)}
+ for(let x=-2.0;x<=2.0;x+=1.0)box3(x-.025,x+.025,L1,13.8,-9.58,-9.54,fr);
+ for(let z=-8.6;z>=-8.6&&z<=-6.0;z+=1.3)box3(2.94,2.98,3.82,13.8,z-.025,z+.025,fr)}
+box3(-2.8,2.8,L1-.03,L1,-9.4,-5.6,std(0xc9a57c,{roughness:.6}));     // 로비 바닥
+box3(-.62,.62,L1-.03,L1,-5.6,-5.1,std(0xc9a57c,{roughness:.6}));     // 세대 현관까지 이어지는 바닥
+box3(2.0,2.8,L1,L1+.01,-7.6,-5.6,std(0x6b4a33));                     // 현관 매트
+// ── 유리 엘리베이터: 코어 서쪽 벽 바깥의 원통형 유리 튜브, 바깥 조망 ──
+const elevGlass=new THREE.MeshPhysicalMaterial({color:0x9fd2ec,transparent:true,opacity:.32,roughness:.05,metalness:.1,side:THREE.DoubleSide,depthWrite:false});
+const EX=-3.85,EZ=-7.55,ER=.9,ETOP=14.4,ESTOPS=[L1,4.57,7.77,10.97];
+const landDoors=[],EG=Math.PI*35/180;   // EG: 문 개구부 반각(동쪽 ±35°)
+function gapRing(r,t,seg){const g=new THREE.TorusGeometry(r,t,8,seg,Math.PI*2-2*EG);g.rotateX(Math.PI/2);g.rotateY(-EG);return g}
+{const ringMat=std(0xd7dde2,{metalness:.7,roughness:.25});
+ add(new THREE.CylinderGeometry(ER,ER,ETOP,40,1,true,Math.PI/2+EG,Math.PI*2-2*EG),elevGlass,EX,ETOP/2,EZ,scene,false);
+ for(const a of[EG,-EG,Math.PI/2,Math.PI*3/4,Math.PI,Math.PI*5/4,Math.PI*3/2]){add(new THREE.CylinderGeometry(.045,.045,ETOP,6),ringMat,EX+ER*Math.cos(a),ETOP/2,EZ+ER*Math.sin(a),scene,false)}
+ for(let y=G0+1.6;y<=ETOP;y+=1.6)add(gapRing(ER+.02,.05,40),ringMat,EX,y,EZ,scene,false);
+ for(const y of ESTOPS){const r=add(new THREE.TorusGeometry(ER+.04,.08,8,40),std(0x2f7fa8,{metalness:.4}),EX,y,EZ,scene,false);r.rotation.x=Math.PI/2}
+ add(new THREE.CylinderGeometry(ER+.15,ER+.15,.25,40),std(0xb7b2a8),EX,ETOP+.12,EZ);
+ add(new THREE.SphereGeometry(ER+.1,32,12,0,Math.PI*2,0,Math.PI/2),elevGlass,EX,ETOP+.25,EZ,scene,false);
+ add(new THREE.CylinderGeometry(ER+.15,ER+.25,.25,40),std(0xb7b2a8),EX,G0+.1,EZ);
+ // 층마다 승강장 유리문(코어 서쪽 벽)
+ ESTOPS.forEach((y,si)=>{box3(-3.06,-2.96,y+2.15,y+2.24,-8.25,-6.85,ringMat);
+   const pr=[];for(const sz of[-1,1]){const g=new THREE.Group();g.position.set(-3.0,y,-7.55+sz*.28);scene.add(g);
+     add(new THREE.BoxGeometry(.03,2.12,.54),elevGlass,0,1.07,0,g,false);
+     box3(-.025,.025,0,.05,-.27,.27,ringMat,g);box3(-.025,.025,2.07,2.12,-.27,.27,ringMat,g);
+     box3(-.025,.025,.05,2.07,sz>0?-.27:.24,sz>0?-.24:.27,ringMat,g);
+     pr.push({g,sz})}
+   landDoors.push({si,pr,k:0})});
+ // 로비 승강장 호출 버튼
+ box3(-2.82,-2.78,L1+1.0,L1+1.25,-6.72,-6.6,std(0xd7dde2,{metalness:.6}));
+ box3(-2.79,-2.77,L1+1.05,L1+1.2,-6.69,-6.63,new THREE.MeshStandardMaterial({color:0xffd27a,emissive:0xffb040,emissiveIntensity:.8}))}
+// 엘리베이터 칸: 둥근 유리 캡슐, 천장 조명
+const cab=new THREE.Group();cab.position.set(EX,L1,EZ);scene.add(cab);
+const elder=new THREE.Group();cab.add(elder);   // 평소 타고 있는 어르신(구경하기 때는 숨김)
+{const cabFrame=std(0xf2f2f2,{metalness:.5,roughness:.3});
+ add(new THREE.CylinderGeometry(.78,.78,.03,32),std(0xc9a57c),0,.015,0,cab);
+ add(new THREE.CylinderGeometry(.78,.78,.08,32),cabFrame,0,2.3,0,cab);
+ add(new THREE.CylinderGeometry(.77,.77,2.2,32,1,true,Math.PI/2+EG,Math.PI*2-2*EG),new THREE.MeshPhysicalMaterial({color:0xe8f6ff,transparent:true,opacity:.18,roughness:.05,side:THREE.DoubleSide,depthWrite:false}),0,1.2,0,cab,false);
+ add(gapRing(.72,.03,32),cabFrame,0,.95,0,cab,false);
+ add(new THREE.CylinderGeometry(.5,.5,.03,24),new THREE.MeshStandardMaterial({color:0xfff4dc,emissive:0xffe2b0,emissiveIntensity:1.2}),0,2.25,0,cab,false);
+ const cl=new THREE.PointLight(0xffe2b0,3,4,1.5);cl.position.set(0,2.0,0);cab.add(cl);
+ add(new THREE.CylinderGeometry(.17,.2,.95,10),std(0x7d9a6b),0,.6,.1,elder);add(new THREE.SphereGeometry(.14,12,10),std(0xf1c9a5),0,1.22,.1,elder);
+ add(new THREE.SphereGeometry(.15,10,8),std(0xeeeeee),0,1.32,.1,elder)}   // 흰머리 어르신
+const elev={y:L1,stops:ESTOPS,i:1,dir:1,wait:2};
+// 계단 (로비 북쪽 벽을 따라 서쪽으로 올라감)
+for(let k=0;k<17;k++)box3(2.5-k*.25,2.75-k*.25,L1,L1+(k+1)*(3.35/17),-9.4,-8.3,std(0xe2dccf));   // 1층→2층 17단
+{const rail=std(0x3b3f45,{metalness:.5}),rh=3.35/17;
+ for(const k of[4,8,12,16])box3(2.6-k*.25,2.64-k*.25,L1+(k+1)*rh,L1+(k+1)*rh+.9,-8.33,-8.29,rail);  // 손잡이 기둥
+ const run=16*.25,rise=16*rh,len=Math.hypot(run,rise),r=add(new THREE.BoxGeometry(len,.05,.05),rail,2.62-run/2,L1+rh+.9+rise/2,-8.31);r.rotation.z=Math.atan2(rise,run)}
+// 신발장·벤치·화분
+box3(1.0,2.4,L1,L1+1.0,-6.0,-5.6,M.wood);
+box3(-2.2,-1.0,L1+.42,L1+.48,-6.0,-5.6,M.wood);
+add(new THREE.CylinderGeometry(.22,.18,.45,12),std(0xb98b5e),-2.5,L1+.22,-6.2);add(new THREE.SphereGeometry(.4,10,8),M.plant,-2.5,L1+.75,-6.2);
+// 세대 현관문 101·201·301 (나무 여닫이문, 클릭하면 열림 · 구경하기 때는 다가가면 열림)
+const unitDoors=[];
+function makeUnitDoor(y,no,fam,idx){
+  const d=new THREE.Group();d.position.set(-.58,y,-5.65);d.userData.toggle='unitdoor:'+idx;scene.add(d);
+  box3(0,1.16,0,2.12,-.03,.03,std(0x8a5a36,{roughness:.6}),d);
+  for(const yy of[.35,1.0,1.65])box3(.08,1.08,yy,yy+.04,-.05,-.03,std(0x6b4226),d);
+  box3(1.0,1.06,.95,1.1,-.08,-.03,steel,d);
+  box3(-.68,-.58,y,y+2.2,-5.82,-5.58,M.wood);box3(.58,.68,y,y+2.2,-5.82,-5.58,M.wood);box3(-.68,.68,y+2.12,y+2.22,-5.82,-5.58,M.wood);
+  const np=tex((g,w,h)=>{g.fillStyle='#f6ead2';g.fillRect(0,0,w,h);g.fillStyle='#5b3a24';g.textAlign='center';g.textBaseline='middle';
+    g.font=`bold ${h*.42}px "Malgun Gothic",sans-serif`;g.fillText(no,w/2,h*.34);g.font=`${h*.26}px "Malgun Gothic",sans-serif`;g.fillText(fam,w/2,h*.74)},200,120);
+  add(new THREE.PlaneGeometry(.36,.22),std(0xffffff,{map:np}),.9,y+1.55,-5.81,scene,false).rotation.y=Math.PI;
+  box3(.82,.9,y+1.15,y+1.27,-5.83,-5.8,new THREE.MeshStandardMaterial({color:0xffe9b0,emissive:0xffc060,emissiveIntensity:.5}));   // 초인종
+  unitDoors.push({g:d,open:false,k:0,y,pos:new THREE.Vector3(0,y,-5.7)})}
+makeUnitDoor(L1,'101','가족 A',0);makeUnitDoor(4.57,'201','가족 B',1);makeUnitDoor(7.77,'301','가족 C',2);
+// 로비 조명
+const lobbyPanel=new THREE.MeshStandardMaterial({color:0xfff4dc,emissive:0xffe2b0,emissiveIntensity:.8});
+box3(-1.2,1.2,3.79,3.82,-8.2,-6.2,lobbyPanel);
+const lobbyL=new THREE.PointLight(0xffe2b0,6,9,1.4);lobbyL.position.set(0,3.4,-7.2);scene.add(lobbyL);
+// ── 주출입문: 코어 동쪽, 폭 2.4m 자동 미닫이 유리문, 문턱 없음 ──
+box3(3,3.18,L1,L1+2.48,-8.0,-7.8,M.wood);box3(3,3.18,L1,L1+2.48,-5.4,-5.2,M.wood);box3(3,3.18,L1+2.3,L1+2.48,-8.0,-5.2,M.wood);
+box3(3,3.18,L1,L1+.01,-7.8,-5.4,std(0xc9cdd1,{metalness:.6,roughness:.3}));
+const doorGlass=new THREE.MeshPhysicalMaterial({color:0xcfe6f2,transparent:true,opacity:.3,roughness:.05,side:THREE.DoubleSide,depthWrite:false});
+const entryDoor=new THREE.Group();entryDoor.userData.toggle='door';scene.add(entryDoor);
+const doorPanels=[];
+for(const sx of[-1,1]){const dp=new THREE.Group();dp.position.set(3.09,L1,-6.6+sx*.6);entryDoor.add(dp);
+  add(new THREE.BoxGeometry(.03,2.28,1.18),doorGlass,0,1.15,0,dp,false);
+  box3(-.03,.03,0,.06,-.59,.59,steel,dp);box3(-.03,.03,2.22,2.28,-.59,.59,steel,dp);
+  box3(-.03,.03,.06,2.22,sx>0?-.59:.53,sx>0?-.53:.59,steel,dp);
+  box3(.03,.06,.8,1.4,sx>0?-.5:.46,sx>0?-.46:.5,steel,dp);   // 손잡이
+  doorPanels.push({dp,sx})}
+// 현관 표지판 (문 북쪽 벽)
+{const sg=tex((g,w,h)=>{g.fillStyle='#5b3a24';g.fillRect(0,0,w,h);g.fillStyle='#f6ead2';g.textAlign='center';g.textBaseline='middle';
+  g.font=`bold ${h*.34}px "Malgun Gothic",sans-serif`;g.fillText('현관',w/2,h*.36);g.font=`${h*.2}px sans-serif`;g.fillText('ENTRANCE',w/2,h*.74)},256,160);
+ add(new THREE.PlaneGeometry(.9,.56).rotateY(Math.PI/2),std(0xffffff,{map:sg}),3.02,L1+1.6,-8.75,scene,false)}
+// 현관 앞마당(지면보다 0.22m, 둘레는 완만한 경사로 연결)
+box3(3,7.4,G0,L1,-8.8,-4.4,std(0xd9d0c1));
+box3(4.4,5.8,L1+.42,L1+.48,-8.6,-8.2,M.wood);for(const x of[4.5,5.7])box3(x-.04,x+.04,L1,L1+.42,-8.55,-8.25,M.dwood);
+for(const z of[-8.3,-4.9]){add(new THREE.CylinderGeometry(.25,.2,.6,12),std(0xb98b5e),6.9,L1+.3,z);add(new THREE.SphereGeometry(.45,10,8),M.plant,6.9,L1+.9,z)}
+const entryL=new THREE.PointLight(0xffd7a0,0,8,1.6);entryL.position.set(4.6,L1+2.6,-6.6);scene.add(entryL);
+// 표지석 (동쪽 보행로 입구, 도로 옆)
+{const st=add(new THREE.BoxGeometry(1.8,1.0,.55),std(0x4b4d50,{roughness:.95}),13.4,G0+.5,-20.2);st.rotation.y=-.12;
+ const sign=tex((g,w,h)=>{g.fillStyle='#4b4d50';g.fillRect(0,0,w,h);g.fillStyle='#efe6d2';g.font=`bold ${h*.38}px "Malgun Gothic",sans-serif`;g.textAlign='center';g.textBaseline='middle';g.fillText('섬마을 바다집',w/2,h/2)},512,160);
+ add(new THREE.PlaneGeometry(1.6,.5).rotateY(Math.PI),std(0xffffff,{map:sign}),0,.05,-.28,st,false)}
+
+// 안전문: 평소 닫힘 · 클릭하거나 구경하기 캐릭터가 다가가면 열림
+const gates=[],tDoors=[];
+function makeGate(parent,hx,hz,y,len,cd,od){const g=new THREE.Group();g.position.set(hx,y,hz);g.userData.toggle='gate:'+gates.length;parent.add(g);
+  const a0=Math.atan2(-cd[1],cd[0]),a1=Math.atan2(-od[1],od[0]);g.rotation.y=a0;
+  add(new THREE.BoxGeometry(len,.95,.03),M.rail,len/2,.55,0,g,false);
+  box3(0,len,1.0,1.07,-.035,.035,M.wood,g);box3(0,len,.05,.1,-.025,.025,steel,g);
+  box3(0,.05,.05,1.0,-.03,.03,steel,g);box3(len-.05,len,.05,1.0,-.03,.03,steel,g);
+  gates.push({g,a0,a1,k:0,open:false,pos:new THREE.Vector3(hx+cd[0]*len/2,y,hz+cd[1]*len/2)})}
 
 /* 주거층 */
 const floors=[];const H=3.2;const levels=[1.2,4.4,7.6];
@@ -530,25 +758,116 @@ levels.forEach((y0,i)=>{
     add(new THREE.CylinderGeometry(7.02,7.02,.3,72,1,true,D(-75),D(150)),M.wood,0,y0,0,g);
     add(new THREE.CylinderGeometry(6.95,6.95,1.0,72,1,true,D(-75),D(150)),M.rail,0,y0+.65,0,g,false);
     add(new THREE.CylinderGeometry(6.95,6.95,.07,72,1,true,D(-75),D(150)),M.wood,0,y0+1.15,0,g);
-    add(new THREE.CylinderGeometry(6.98,6.98,.04,72,1,false,D(-75),D(150)),M.deck,0,y0+.16,0,g)}
-  add(new THREE.CylinderGeometry(5.2,5.2,.03,72),M.floor,0,y0+.17,0,g);
-  const wh=H-.3,wy=y0+.15+wh/2;
-  add(new THREE.CylinderGeometry(5.5,5.5,wh,96,1,true,D(65),D(230)),std(0xf6f3ee,{side:THREE.DoubleSide}),0,wy,0,g);
-  add(new THREE.CylinderGeometry(5.42,5.42,wh,96,1,true,D(-65),D(130)),M.glass,0,wy,0,g,false);
-  for(let a=-65;a<=65;a+=13){const r=5.45;add(new THREE.BoxGeometry(.08,wh,.08),M.dwood,r*Math.sin(D(a)),wy,r*Math.cos(D(a)),g)}
+    add(new THREE.CylinderGeometry(6.98,6.98,.04,72,1,false,D(-75),D(150)),M.deck,0,y0+.16,0,g)
+    for(const te of[75,-75]){const u=[Math.sin(D(te)),Math.cos(D(te))],od=te>0?[Math.cos(D(te)),-Math.sin(D(te))]:[-Math.cos(D(te)),Math.sin(D(te))];
+      makeGate(g,u[0]*5.58,u[1]*5.58,y0+.18,1.34,u,od)}}   // 발코니 끝 안전문
+  // fy: 이 층 바닥면. 1층은 현관 로비와 같은 +1.22(문턱 없음)
+  const fy=i===0?1.22:y0+.17,base=fy-.02,wh=(y0+H-.15)-base,wy=base+wh/2;
+  add(new THREE.CylinderGeometry(5.2,5.2,.03,72),M.floor,0,fy-.015,0,g);
+  // 외벽: 북쪽(코어 쪽) 가운데에 세대 현관 개구부(폭 약 1.25m)
+  const wallMat=std(0xf6f3ee,{side:THREE.DoubleSide});
+  add(new THREE.CylinderGeometry(5.5,5.5,wh,96,1,true,D(65),D(108.5)),wallMat,0,wy,0,g);
+  add(new THREE.CylinderGeometry(5.5,5.5,wh,96,1,true,D(186.5),D(108.5)),wallMat,0,wy,0,g);
+  add(new THREE.CylinderGeometry(5.5,5.5,wh-2.15,24,1,true,D(173.5),D(13)),wallMat,0,base+2.15+(wh-2.15)/2,0,g);
+  add(new THREE.CylinderGeometry(5.42,5.42,wh,48,1,true,D(-65),D(58)),M.glass,0,wy,0,g,false);
+  add(new THREE.CylinderGeometry(5.42,5.42,wh,48,1,true,D(7),D(58)),M.glass,0,wy,0,g,false);
+  add(new THREE.CylinderGeometry(5.42,5.42,wh-2.28,8,1,true,D(-7),D(14)),M.glass,0,base+2.28+(wh-2.28)/2,0,g,false);
+  // 거실에서 바로 테라스(1층)·발코니(2·3층)로 나가는 유리 미닫이문
+  {const jx=5.42*Math.sin(D(7)),jz=5.42*Math.cos(D(7));
+   for(const sx of[-1,1])box3(sx*jx-.05,sx*jx+.05,base,base+2.28,jz-.06,jz+.06,M.dwood,g);
+   box3(-jx,jx,base+2.2,base+2.28,jz-.06,jz+.06,M.dwood,g);
+   const tg=new THREE.Group();tg.userData.toggle='tdoor:'+tDoors.length;g.add(tg);const pn=[];
+   for(const sx of[-1,1]){const dp=new THREE.Group();dp.position.set(sx*jx/2,base,5.47);tg.add(dp);
+     add(new THREE.BoxGeometry(jx,2.18,.03),M.glass,0,1.1,0,dp,false);
+     box3(-jx/2,jx/2,2.14,2.18,-.02,.02,M.dwood,dp);box3(-jx/2,jx/2,0,.04,-.02,.02,M.dwood,dp);
+     box3(sx>0?-jx/2:jx/2-.04,sx>0?-jx/2+.04:jx/2,.04,2.14,-.02,.02,M.dwood,dp);
+     box3(sx>0?-jx/2+.06:jx/2-.1,sx>0?-jx/2+.1:jx/2-.06,.85,1.35,-.05,-.02,steel,dp);   // 손잡이
+     pn.push({dp,sx})}
+   tDoors.push({pn,jx,k:0,open:false,pos:new THREE.Vector3(0,fy,5.4)})}
+  for(let a=-65;a<=65;a+=13){if(Math.abs(a)<8)continue;const r=5.45;add(new THREE.BoxGeometry(.08,wh,.08),M.dwood,r*Math.sin(D(a)),wy,r*Math.cos(D(a)),g)}
   [95,135,225,265].forEach(a=>{const r=5.53,m=add(new THREE.PlaneGeometry(1.1,1.7),M.lattice,r*Math.sin(D(a)),y0+1.6,r*Math.cos(D(a)),g,false);m.rotation.y=D(a)});
-  const cxx=y=>Math.sqrt(5.2*5.2-y*y);const pw=(x1,x2,z1,z2)=>box3(x1,x2,y0+.15,y0+.15+wh,z1,z2,M.wall,g);
-  pw(-cxx(.5),-1,.44,.56);pw(1,cxx(.5),.44,.56);pw(-1.06,-.94,-5.1,.5);pw(.94,1.06,-5.1,.5);
-  pw(1,4.71,-2.26,-2.14);pw(2.94,3.06,-4.25,-2.2);
-  const f=(x1,x2,h,z1,z2,mat)=>box3(x1,x2,y0+.18,y0+.18+h,z1,z2,mat,g);
-  f(1.4,2.2,.45,1.3,3.6,M.sofa);f(1.4,1.65,.85,1.3,3.6,M.sofa);f(2.8,3.5,.4,2.0,2.9,M.wood);
-  f(4.2,4.7,1.1,1.0,2.2,M.stone);
-  fires.push(box3(4.18,4.2,y0+.45,y0+.85,1.25,1.95,M.fire,g));
-  f(-4.5,-1.2,.9,.5,1.1,M.fabric);f(-3.8,-1.8,.9,1.9,2.6,M.fabric);
-  add(new THREE.CylinderGeometry(.6,.6,.05,24),M.wood,-2,y0+.93,3.4,g);
-  add(new THREE.CylinderGeometry(.06,.06,.75,8),M.dwood,-2,y0+.55,3.4,g);
-  f(-3.9,-2.1,.5,-3,-1,M.bed);f(3.0,4.5,.5,-1.4,.35,M.bed);
-  const pl=new THREE.PointLight(0xffc98a,0,14,1.6);pl.position.set(0,y0+2.5,1);g.add(pl);lights.push(pl);
+  // ── 세대 내부: 칸막이(문 개구부 포함) + 방마다 가구 ──
+  const cxx=y=>Math.sqrt(5.2*5.2-y*y);
+  const pw=(x1,x2,z1,z2)=>box3(x1,x2,base,base+wh,z1,z2,M.wall,g);
+  const lin=(x1,x2,z1,z2)=>box3(x1,x2,base+2.1,base+wh,z1,z2,M.wall,g);          // 문 위 벽
+  const b=(x1,x2,y1,y2,z1,z2,mat)=>box3(x1,x2,fy+y1,fy+y2,z1,z2,mat,g);
+  const IM={door:std(0xa4774c,{roughness:.6}),white:std(0xf4f1ea),top:std(0xb98b5e,{roughness:.5}),
+    steel:std(0xc9cdd1,{metalness:.6,roughness:.3}),black:std(0x26282b),tile:std(0xc8d3d8),ceramic:std(0xfafafa,{roughness:.2}),
+    mirror:std(0xdfeaf0,{metalness:.8,roughness:.05}),duvet:std(0xd9c7a8),pillow:std(0xffffff),rug1:std(0xc9b79a),rug2:std(0x9fb3a6),
+    rug3:std(0xd8c9b0),book1:std(0x7d5a44),book2:std(0x4f6d8a),book3:std(0xb5643f),sofa:std(0x6f8291),cushion:std(0xe9dcc4),
+    lamp:new THREE.MeshStandardMaterial({color:0xfff2d6,emissive:0xffd9a0,emissiveIntensity:.9}),
+    frost:new THREE.MeshPhysicalMaterial({color:0xe8f3f8,transparent:true,opacity:.45,roughness:.3,side:THREE.DoubleSide,depthWrite:false})};
+  // 칸막이 + 문 개구부(평면도와 같은 위치)
+  pw(-cxx(.5),-1,.44,.56);pw(1,cxx(.5),.44,.56);
+  pw(-1.06,-.94,-5.1,-1.6);pw(-1.06,-.94,-.7,.5);lin(-1.06,-.94,-1.6,-.7);                    // 안방 문
+  pw(.94,1.06,-5.1,-3.9);pw(.94,1.06,-3.1,-1.6);pw(.94,1.06,-.7,.5);lin(.94,1.06,-3.9,-3.1);lin(.94,1.06,-1.6,-.7);  // 욕실·작은방 문
+  pw(1,3.4,-2.26,-2.14);pw(4.1,4.71,-2.26,-2.14);lin(3.4,4.1,-2.26,-2.14);                  // 드레스룸 문
+  pw(2.94,3.06,-4.25,-2.2);
+  // 문짝(조금 열어 둔 상태)
+  const leaf=(hx,hz,alongX,ang,mat=IM.door)=>{const d=new THREE.Group();d.position.set(hx,fy,hz);d.rotation.y=ang;g.add(d);
+    if(alongX)box3(0,.86,0,2.05,-.02,.02,mat,d);else box3(-.02,.02,0,2.05,-.86,0,mat,d)};
+  leaf(-1,-.7,false,D(65));leaf(1,-.7,false,D(-65));leaf(1,-3.1,false,D(-90),IM.frost);leaf(3.4,-2.2,true,D(80));
+  // 현관·복도
+  b(-1,1,0,.01,-5.2,-4.0,std(0x8d8a84));                       // 현관 바닥(돌)
+  b(-.94,-.55,0,2.0,-5.0,-4.05,IM.white);for(const y of[.65,1.3])b(-.55,-.54,y,y+.02,-5.0,-4.05,IM.black);   // 신발장
+  b(.55,.94,1.6,1.65,-4.9,-4.2,IM.top);for(const z of[-4.8,-4.5,-4.25])b(.6,.66,1.45,1.6,z-.02,z+.02,IM.black);  // 옷걸이
+  b(-.5,.5,0,.012,-3.8,-3.2,IM.rug1);
+  b(-.2,.2,2.62,2.65,-2.6,-2.2,IM.lamp);b(-.2,.2,2.62,2.65,-.6,-.2,IM.lamp);   // 복도 조명
+  // 안방
+  b(-3.7,-2.1,0,.42,-3.3,-1.3,IM.white);b(-3.7,-2.1,.42,.55,-2.75,-1.3,IM.duvet);b(-3.75,-2.05,0,1.05,-3.42,-3.3,IM.top);
+  b(-3.55,-3.0,.42,.58,-3.25,-2.85,IM.pillow);b(-2.8,-2.25,.42,.58,-3.25,-2.85,IM.pillow);
+  b(-2.0,-1.6,0,.5,-3.3,-2.9,IM.top);add(new THREE.CylinderGeometry(.1,.14,.22,12),IM.lamp,-1.8,fy+.66,-3.1,g,false);
+  b(-4.0,-1.8,0,.01,-2.5,-.6,IM.rug1);
+  b(-4.4,-1.6,0,2.1,-.1,.44,IM.white);for(const x of[-3.7,-3.0,-2.3])b(x-.01,x+.01,.1,2.0,-.11,-.1,IM.black);   // 붙박이장
+  b(-4.85,-4.35,0,.78,-1.25,-.45,IM.top);b(-4.95,-4.88,.9,1.6,-1.1,-.6,IM.mirror);                            // 화장대·거울
+  b(-.3-2.6,.3-2.6,2.62,2.65,-2.3,-1.7,IM.lamp);
+  // 작은방
+  b(3.0,4.4,0,.42,-1.4,.35,IM.white);b(3.0,4.4,.42,.52,-.9,.35,std(0xa9c1d1));b(3.0,4.4,0,.9,-1.5,-1.4,IM.top);b(3.3,4.1,.42,.56,-1.35,-1.05,IM.pillow);
+  b(1.3,2.6,.72,.76,-.05,.44,IM.top);b(1.35,1.4,0,.72,0,.4,IM.black);b(2.5,2.55,0,.72,0,.4,IM.black);
+  b(1.75,2.15,.76,1.05,.3,.33,IM.black);chair(g,1.95,fy,-.35,Math.PI);
+  b(1.1,2.4,0,1.8,-2.14,-1.85,IM.white);
+  for(const[y,m]of[[.4,IM.book1],[.85,IM.book2],[1.3,IM.book3]])b(1.15,2.35,y,y+.3,-2.12,-1.9,m);
+  b(2.7,3.0,0,.01,-1.0,0,IM.rug2);b(3.4,4.0,2.62,2.65,-.8,-.2,IM.lamp);
+  // 욕실
+  b(1.06,2.94,0,.015,-4.25,-2.26,IM.tile);
+  add(new THREE.CylinderGeometry(.19,.16,.4,16),IM.ceramic,2.4,fy+.2,-3.95,g);b(2.2,2.6,0,.8,-4.45,-4.22,IM.ceramic);   // 변기
+  b(1.1,1.6,0,.82,-4.7,-4.0,IM.white);b(1.12,1.58,.82,.86,-4.68,-4.02,IM.ceramic);b(1.07,1.1,1.0,1.7,-4.6,-4.1,IM.mirror);  // 세면대·거울
+  b(1.9,2.94,0,.05,-3.2,-2.26,IM.tile);b(1.88,1.9,0,2.0,-3.2,-2.4,IM.frost);b(1.9,2.94,0,2.0,-3.22,-3.2,IM.frost);           // 샤워부스
+  add(new THREE.CylinderGeometry(.1,.1,.02,16),IM.steel,2.5,fy+2.0,-2.7,g);b(2.48,2.52,1.9,2.6,-2.72,-2.68,IM.steel);
+  b(1.5,1.9,1.4,1.42,-2.29,-2.27,IM.steel);b(1.55,1.85,.9,1.4,-2.3,-2.27,std(0x8fb3c9));                                     // 수건
+  b(1.8,2.2,2.62,2.65,-3.9,-3.5,IM.lamp);
+  // 드레스·세탁
+  b(3.1,3.7,0,.85,-3.5,-2.9,IM.white);b(3.1,3.7,.85,1.7,-3.5,-2.9,IM.white);
+  for(const y of[.42,1.27]){const c=add(new THREE.CylinderGeometry(.2,.2,.02,20),IM.black,3.71,fy+y,-3.2,g);c.rotation.z=Math.PI/2}
+  b(3.8,4.2,1.75,1.78,-2.72,-2.68,IM.steel);for(const[x,m]of[[3.88,IM.book2],[4.0,IM.cushion],[4.12,IM.book3]])b(x-.04,x+.04,.95,1.72,-2.85,-2.55,m);
+  // 부엌
+  b(-4.5,-1.2,0,.88,.56,1.16,IM.white);b(-4.52,-1.18,.88,.92,.54,1.18,IM.top);
+  b(-3.6,-3.0,.9,.93,.65,1.05,IM.steel);b(-2.35,-1.65,.92,.93,.65,1.05,IM.black);
+  for(const[x,z]of[[-2.2,.75],[-1.8,.75],[-2.2,.95],[-1.8,.95]]){const c=add(new THREE.CylinderGeometry(.08,.08,.01,12),std(0x55585c),x,fy+.94,z,g)}
+  b(-4.5,-1.2,1.5,2.3,.56,.9,IM.white);b(-2.4,-1.6,1.25,1.5,.56,1.05,IM.steel);                                               // 상부장·후드
+  b(-5.0,-4.52,0,1.95,.56,1.2,IM.steel);b(-4.53,-4.52,.9,1.2,.62,.66,IM.black);                                                // 냉장고
+  b(-3.8,-1.8,0,.88,1.9,2.6,IM.white);b(-3.85,-1.75,.88,.93,1.85,2.65,IM.top);
+  for(const x of[-3.3,-2.8,-2.3]){add(new THREE.CylinderGeometry(.17,.17,.05,12),IM.top,x,fy+.68,2.9,g);add(new THREE.CylinderGeometry(.03,.03,.66,6),IM.black,x,fy+.33,2.9,g)}
+  for(const x of[-3.3,-2.3]){add(new THREE.CylinderGeometry(.15,.08,.25,14),IM.lamp,x,fy+2.2,2.25,g,false);b(x-.01,x+.01,2.32,2.65,2.24,2.26,IM.black)}
+  // 식탁
+  add(new THREE.CylinderGeometry(.6,.6,.05,24),IM.top,-2,fy+.76,3.4,g);add(new THREE.CylinderGeometry(.06,.06,.75,8),M.dwood,-2,fy+.38,3.4,g);
+  [[0,-.85,0],[0,.85,Math.PI],[-.85,0,Math.PI/2],[.85,0,-Math.PI/2]].forEach(([a,c,r])=>chair(g,-2+a,fy,3.4+c,r));
+  add(new THREE.CylinderGeometry(.3,.15,.2,16),IM.lamp,-2,fy+2.05,3.4,g,false);b(-2.01,-1.99,2.15,2.65,3.39,3.41,IM.black);
+  // 거실: L자 소파·쿠션·탁자·러그·안락의자·스탠드·책장·화분
+  b(1.35,2.2,0,.42,1.2,3.7,IM.sofa);b(1.35,1.6,.42,.85,1.2,3.7,IM.sofa);b(1.6,2.2,.42,.6,1.2,1.35,IM.sofa);b(1.6,2.2,.42,.6,3.55,3.7,IM.sofa);
+  b(1.6,2.9,0,.42,3.0,3.7,IM.sofa);b(1.6,2.9,.42,.85,3.55,3.7,IM.sofa);
+  for(const z of[1.7,2.4,3.1])b(1.6,1.75,.45,.8,z-.25,z+.25,IM.cushion);
+  b(2.6,3.5,.38,.42,1.8,2.8,IM.top);b(2.65,3.45,0,.38,1.85,2.75,IM.black);
+  b(2.2,4.0,0,.01,1.4,3.4,IM.rug3);
+  b(3.6,4.2,0,.42,3.0,3.6,IM.cushion);b(3.6,4.2,.42,.8,3.45,3.6,IM.cushion);
+  add(new THREE.CylinderGeometry(.02,.02,1.5,6),IM.black,1.1,fy+.75,3.95,g);add(new THREE.CylinderGeometry(.14,.2,.3,14),IM.lamp,1.1,fy+1.6,3.95,g,false);
+  b(1.4,3.6,0,.9,.56,.9,IM.white);for(const[x,m]of[[1.6,IM.book1],[2.0,IM.book2],[2.4,IM.book3],[3.0,IM.book1]])b(x,x+.3,.92,1.2,.6,.85,m);
+  for(const[x,z]of[[.7,4.5],[-4.3,2.4]]){add(new THREE.CylinderGeometry(.2,.16,.4,12),std(0xb98b5e),x,fy+.2,z,g);add(new THREE.SphereGeometry(.38,10,8),M.plant,x,fy+.75,z,g)}
+  b(-.3,.3,2.62,2.65,1.7,2.3,IM.lamp);
+  // 벽난로
+  b(4.2,4.7,0,1.1,1.0,2.2,M.stone);b(4.15,4.7,1.1,1.16,.95,2.25,IM.top);
+  fires.push(box3(4.18,4.2,fy+.27,fy+.67,1.25,1.95,M.fire,g));
+  const pl=new THREE.PointLight(0xffc98a,0,14,1.6);pl.position.set(0,fy+2.33,1);g.add(pl);lights.push(pl);
 });
 
 /* 옥상: 천문대 돔 + 십자 아치 그늘막 + 바비큐 */
@@ -562,6 +881,7 @@ const bulbMat=new THREE.MeshStandardMaterial({color:0xfff1d0,emissive:0xffc070,e
  for(const[a,b]of[[-80,80],[100,155],[205,260]]){
    add(new THREE.CylinderGeometry(7.1,7.1,1.05,48,1,true,D(a),D(b-a)),M.rail,0,y0+.7,0,roof,false);
    add(new THREE.CylinderGeometry(7.1,7.1,.07,48,1,true,D(a),D(b-a)),M.wood,0,y0+1.22,0,roof)}
+ for(const sx of[1,-1]){makeGate(roof,sx*6.99,1.23,y0+.17,1.23,[0,-1],[sx,0]);makeGate(roof,sx*6.99,-1.23,y0+.17,1.23,[0,1],[sx,0])}   // 옥상 양끝 안전문
  add(new THREE.CylinderGeometry(7.05,7.05,.05,96),M.grass,0,y0+.17,0,roof);
  box3(-1.7,1.7,y0+.15,y0+.22,-4.9,6.95,M.deck,roof);
  box3(-6.95,6.95,y0+.15,y0+.22,-1.7,1.7,M.deck,roof);
@@ -651,25 +971,42 @@ function spiral(cx,cz,a0){const g=new THREE.Group();g.position.set(cx,0,cz);circ
   add(new THREE.CylinderGeometry(.1,.1,12,10),steel,0,6,0,g);
   const tops=[];for(let k=0;k<6;k++)tops.push((k+1)*LV[0]/6);
   for(let f=0;f<3;f++)for(let j=0;j<16;j++)tops.push(LV[f]+(j+1)*(LV[f+1]-LV[f])/16);
-  const hp=[];
+  // 층마다 도착하는 칸(k=5·21·37·53) 앞뒤로 손잡이·난간을 끊어 데크로 드나드는 출입구를 냄
+  const gapK=k=>[5,21,37,53].some(c=>Math.abs(k-c)<=1);
+  let hp=[];const flush=()=>{if(hp.length>=2)add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(hp),hp.length*8,.03,6),steel,0,0,0,g,false);hp=[]};
   tops.forEach((y,k)=>{const a=a0+D(22.5)*k;const sg=new THREE.Group();sg.rotation.y=a;g.add(sg);
     box3(.12,1.3,y-.06,y,-.22,.22,M.wood,sg);
     const px=1.27*Math.cos(a),pz=-1.27*Math.sin(a);
-    if((k-5)%16!==0)add(new THREE.CylinderGeometry(.015,.015,.9,4),steel,px,y+.45,pz,g,false);
-    hp.push(new THREE.Vector3(px,y+.9,pz))});
-  add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(hp),600,.03,6),steel,0,0,0,g,false)}
+    if(!gapK(k)&&k>=6)add(new THREE.CylinderGeometry(.015,.015,.9,4),steel,px,y+.45,pz,g,false);
+    if(k>=4&&!gapK(k))hp.push(new THREE.Vector3(px,y+.9,pz));else flush()});
+  flush()}
 for(const sx of[1,-1]){
-  const x1=sx>0?5.6:-13.8,x2=sx>0?13.8:-5.6,xo=sx*13.8,xi=sx*5.6;
+  const x1=sx>0?5.6:-15.3,x2=sx>0?15.3:-5.6,xo=sx*15.3,xi=sx*5.6;
   LV.forEach((lv,i)=>{
     const zMax=i===0?0:1.85;
     if(i===0)box3(x1,x2,0,lv,-2.8,zMax,M.stone,circ);
     else{box3(x1,x2,lv-.3,lv-.02,-2.8,zMax,M.concrete,circ);box3(x1,x2,lv-.02,lv,-2.8,zMax,M.deck,circ)}
-    rail(sx*7.1,xo,zMax,zMax,lv);
-    rail(xi,sx*10.05,-2.8,-2.8,lv);
+    if(i===0&&sx<0)rail(sx*7.1,-12.3,zMax,zMax,lv);else rail(sx*(i===0?7.1:6.66),xo,zMax,zMax,lv);   // 서쪽 1층은 경사로 연결부 개방 · 2층 이상은 발코니 안전문 끝까지 이어 틈 없앰
+    // 북쪽 가장자리 난간: 무빙워크가 실제로 닿는 폭(안쪽 9.7~12.3 / 바깥 12.5~15.1)과 1층 동쪽 보행로만 열고 나머지는 모두 막음
+    {const OPEN={'1_0':[[9.4,11.8]],'1_1':[[9.7,12.3],[12.5,15.1]],'1_2':[],'1_3':[[9.7,12.3]],
+                 '-1_0':[[9.7,12.3]],'-1_1':[],'-1_2':[[9.7,12.3],[12.5,15.1]],'-1_3':[]}[sx+'_'+i];
+     let cur=i===0?6.7:4.7;   // 1층은 기단과 이어지게 6.7부터, 2층 이상은 건물 벽(4.7)부터
+     for(const[a,b]of OPEN){if(a>cur)rail(sx*cur,sx*a,-2.8,-2.8,lv);cur=b}
+     if(cur<15.3)rail(sx*cur,sx*15.3,-2.8,-2.8,lv)}
+    if(i===1||i===2){   // 연결 데크와 둥근 건물 벽 사이 삼각형 빈틈을 바닥으로 메움
+      const pts=[[5.65,-2.8],[4.7,-2.8]];for(let a=121;a>=75;a-=4)pts.push([5.48*Math.sin(D(a)),5.48*Math.cos(D(a))]);pts.push([5.65,1.42]);
+      const sh=new THREE.Shape();pts.forEach(([x,z],k)=>k?sh.lineTo(sx*x,-z):sh.moveTo(sx*x,-z));
+      add(new THREE.ExtrudeGeometry(sh,{depth:.3,bevelEnabled:false}).rotateX(-Math.PI/2),M.deck,0,lv-.3,0,circ)}
     rail(xo,xo,-2.8,-1.35,lv);rail(xo,xo,.35,zMax,lv);
+    makeGate(circ,xo,-1.35,lv,.85,[0,1],[-sx,0]);makeGate(circ,xo,.35,lv,.85,[0,-1],[-sx,0]);   // 나선계단 출입구 안전문(데크 쪽으로 열림)
   });
-  for(const z of[-2.65,1.7])add(new THREE.CylinderGeometry(.15,.15,10.7,10),M.concrete,sx*13.65,5.35,z,circ);
-  spiral(sx*15.2,-.5,sx>0?D(67.5):D(-112.5));
+  // 구조 보강: 600×600 철근콘크리트 기둥 4개 + 기초 + 남쪽 면 X자 철골 가새(층마다)
+  for(const[x,z,h]of[[sx*15.1,-2.65,.25],[sx*15.0,1.6,.3],[sx*10.5,1.6,.3],[sx*8.2,-2.5,.3]]){
+    box3(x-h,x+h,0,10.97-.3,z-h,z+h,M.concrete,circ);box3(x-.75,x+.75,.6,1.03,z-.75,z+.75,M.concrete,circ)}
+  {const brace=std(0x3b3f45,{metalness:.6,roughness:.35});
+   for(let f=0;f<3;f++){const y1=LV[f],y2=LV[f+1]-.3,xa=sx*10.8,xb=sx*14.7,z=1.95;
+     for(const[a,b]of[[[xa,y1],[xb,y2]],[[xa,y2],[xb,y1]]]){const L=Math.hypot(b[0]-a[0],b[1]-a[1]),m=add(new THREE.BoxGeometry(L,.12,.12),brace,(a[0]+b[0])/2,(a[1]+b[1])/2,z,circ);m.rotation.z=Math.atan2(b[1]-a[1],b[0]-a[0])}}}
+  spiral(sx*16.7,-.5,sx>0?D(67.5):D(-112.5));
 }
 // 무빙워크 벨트
 const beltTex=tex((g,w,h)=>{g.fillStyle='#5d6268';g.fillRect(0,0,w,h);g.fillStyle='#80868d';for(let x=0;x<w;x+=8)g.fillRect(x,0,3,h);g.fillStyle='#3a3e43';g.fillRect(0,0,w,4)},64,64);
@@ -682,36 +1019,70 @@ function lane(r,a1,a2,y1,y2,N=10){const pts=[],idx=lanes.length;
   for(let i=0;i<=N;i++){const a=D(a1+(a2-a1)*i/N);pts.push(new THREE.Vector3(r*Math.sin(a),y1+(y2-y1)*i/N,r*Math.cos(a)))}
   for(let i=0;i<N;i++){const p1=pts[i],p2=pts[i+1],len=p1.distanceTo(p2)+.05;
     const s=new THREE.Group();s.position.copy(p1).lerp(p2,.5);s.userData.toggle='lane:'+idx;circ.add(s);s.lookAt(p2);
-    box3(-.85,.85,-.32,-.02,-len/2,len/2,M.concrete,s);
-    const bg=new THREE.PlaneGeometry(1.15,len);const uv=bg.attributes.uv;for(let j=0;j<uv.count;j++)uv.setY(j,uv.getY(j)*len/.6);
+    box3(-1.3,1.3,-.32,-.02,-len/2,len/2,M.concrete,s);
+    box3(-1.15,1.15,-.72,-.32,-len/2,len/2,M.concrete,s);   // 받침 거더(상자형 보)
+    const bg=new THREE.PlaneGeometry(2.0,len);const uv=bg.attributes.uv;for(let j=0;j<uv.count;j++)uv.setY(j,uv.getY(j)*len/.6);
     bg.rotateX(-Math.PI/2);add(bg,beltMat,0,.015,0,s,false).receiveShadow=true;
-    for(const sx of[-.7,.7]){box3(sx-.08,sx+.08,-.02,.14,-len/2,len/2,skirt,s);
+    for(const sx of[-1.12,1.12]){box3(sx-.08,sx+.08,-.02,.14,-len/2,len/2,skirt,s);
       add(new THREE.BoxGeometry(.03,.85,len),M.rail,sx,.57,0,s,false);
       box3(sx-.05,sx+.05,.97,1.05,-len/2,len/2,M.dark,s);
-      const h=add(new THREE.CylinderGeometry(.035,.035,len,6),steel,sx>0?.9:-.9,1.15,0,s,false);h.rotation.x=Math.PI/2}
+      const h=add(new THREE.CylinderGeometry(.035,.035,len,6),steel,sx>0?1.3:-1.3,1.15,0,s,false);h.rotation.x=Math.PI/2}
     // 투명 아치 지붕: 겹친 3장이 원호를 따라 미끄러져 건물 쪽으로 말려 들어감
     const xw=new THREE.Vector3(1,0,0).applyQuaternion(s.quaternion),rad=s.position.clone().setY(0).normalize();
     const inner=xw.dot(rad)>0?-1:1;
-    for(let k=0;k<3;k++){const r=.9+k*.03;
+    for(let k=0;k<3;k++){const r=1.3+k*.03;
       const geo=new THREE.CylinderGeometry(r,r,len,10,1,true,Math.PI/2,Math.PI/3);geo.rotateX(Math.PI/2);
       const m=add(geo,pcRoof,0,1.15,0,s,false);m.userData.toggle='walk';
       add(new THREE.TorusGeometry(r,.025,5,10,Math.PI/3),steel,0,0,len/2-.02,m,false);
       walkRoof.push({m,closed:D(60*k),open:inner<0?D(120):0})}}
   // 타고 있는 사람(이동 방향 표시)
   const riders=[];
-  for(const [c,u0] of [[0xd9534f,.15],[0x3f7fbf,.6]]){const p=new THREE.Group();circ.add(p);
-    add(new THREE.CylinderGeometry(.17,.2,.95,10),std(c),0,.6,0,p);
-    add(new THREE.SphereGeometry(.14,12,10),std(0xf1c9a5),0,1.22,0,p);
-    riders.push({p,u:u0})}
+  // 두 사람이 나란히 + 짐 카트 (폭 확인용)
+  for(const [c,u0,off] of [[0xd9534f,.2,-.5],[0x3f7fbf,.212,.5],[0,.62,0]]){const p=new THREE.Group();circ.add(p);
+    if(c){add(new THREE.CylinderGeometry(.17,.2,.95,10),std(c),0,.6,0,p);
+      add(new THREE.SphereGeometry(.14,12,10),std(0xf1c9a5),0,1.22,0,p)}
+    else{box3(-.35,.35,.12,.75,-.45,.45,std(0xc9a46b),p);box3(-.38,.38,.05,.12,-.5,.5,steel,p);
+      box3(-.3,.3,.75,1.05,-.3,.2,std(0x8fb3c9),p)}
+    riders.push({p,u:u0,off})}
   lanes.push({tex:tx,dir:1,pts,riders,N});
   return pts}
 function laneAt(l,u){const f=u*l.N,i=Math.min(l.N-1,Math.floor(f));return [l.pts[i].clone().lerp(l.pts[i+1],f-i),i]}
 lane(11,-100,-260,LV[0],LV[1]);    // ① 1층 → 2층 (서 → 북 → 동)
-lane(12.8,-260,-100,LV[1],LV[2]);  // ② 2층 → 3층 (동 → 북 → 서)
+lane(13.8,-260,-100,LV[1],LV[2]);  // ② 2층 → 3층 (동 → 북 → 서)
 lane(11,-100,-260,LV[2],LV[3]);    // ③ 3층 → 옥상
 for(let i=1;i<10;i++){const a=D(-100-16*i),t=i/10;
-  for(const[r,top]of[[10.0,LV[2]+3.2*t-.32],[11.9,LV[2]+3.2*t-.32],[13.8,LV[2]-3.2*t-.32]])
-    add(new THREE.CylinderGeometry(.13,.13,top,8),M.concrete,r*Math.sin(a),top/2,r*Math.cos(a),circ)}
+  for(const[r,top]of[[9.6,LV[2]+(LV[3]-LV[2])*t-.72],[12.4,LV[2]+(LV[3]-LV[2])*t-.72],[15.2,LV[2]-(LV[2]-LV[1])*t-.72]])
+    {const x=r*Math.sin(a),z=r*Math.cos(a);if(Math.abs(x-10.6)<1.6&&z<-2.8)continue;   // 동쪽 보행로 위 기둥 생략
+     if(Math.abs(x)<3.3&&z>-9.95&&z<-4.8)continue;   // 투명 코어 안을 지나는 기둥은 생략(코어 모서리 기둥·보가 받침)
+     add(new THREE.CylinderGeometry(.36,.4,top,16),M.concrete,x,top/2,z,circ);box3(x-.75,x+.75,.6,1.08,z-.75,z+.75,M.concrete,circ);
+     box3(x-.5,x+.5,top-.35,top,z-.5,z+.5,M.concrete,circ)}   // 굵은 기둥 + 기초 + 기둥머리
+  // 무빙워크마다 기둥 꼭대기를 잇는 가로보 (양쪽 기둥과 무빙워크를 묶음)
+  for(const[rc,y]of[[11,LV[0]+(LV[1]-LV[0])*t],[11,LV[2]+(LV[3]-LV[2])*t],[13.8,LV[2]-(LV[2]-LV[1])*t]]){
+    const m=add(new THREE.BoxGeometry(3.2,.4,.55),M.concrete,rc*Math.sin(a),y-.92,rc*Math.cos(a),circ);m.rotation.y=Math.atan2(-Math.cos(a),Math.sin(a))}}
+
+/* 태풍 보호막: 옥상 가장자리 → 1층 방파벽까지 남쪽(바다 쪽)을 둥글게 감쌈 */
+const shield={on:false,k1:0,k2:0},shRibs=[],shRings=[],shGlass=[];
+const SH_TH0=D(-72),SH_TH1=D(72),SH_NR=13,SH_SEG=48,SH_NV=20,SH_NU=4;
+const shP=(th,sv)=>{const r=7.45+3.1*Math.sin(sv),y=2.35+9.9*Math.cos(sv);return new THREE.Vector3(r*Math.sin(th),y,r*Math.cos(th))};
+{const ribMat=std(0x2f7fa8,{metalness:.5,roughness:.35});
+ const glassMat=new THREE.MeshPhysicalMaterial({color:0xbfe3f5,transparent:true,opacity:.38,roughness:.05,metalness:.1,side:THREE.DoubleSide,depthWrite:false});
+ // 옥상 가장자리의 보호막 수납 레일(평소에 보이는 부분)
+ add(new THREE.CylinderGeometry(7.5,7.5,.35,64,1,true,SH_TH0,SH_TH1-SH_TH0),std(0x2f7fa8,{metalness:.5,roughness:.35,side:THREE.DoubleSide}),0,12.3,0);
+ for(let i=0;i<SH_NR;i++){const th=SH_TH0+(SH_TH1-SH_TH0)*i/(SH_NR-1),pts=[];for(let j=0;j<=24;j++)pts.push(shP(th,j/24*Math.PI/2));
+   const m=add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),SH_SEG,.09,8),ribMat,0,0,0,scene,false);m.visible=false;shRibs.push(m)}
+ for(const sv of[.35,.75,1.15]){const pts=[];for(let j=0;j<=48;j++)pts.push(shP(SH_TH0+(SH_TH1-SH_TH0)*j/48,sv));
+   const m=add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),96,.06,6),ribMat,0,0,0,scene,false);m.visible=false;shRings.push({m,sv})}
+ for(let i=0;i<SH_NR-1;i++){const a=SH_TH0+(SH_TH1-SH_TH0)*i/(SH_NR-1),b=SH_TH0+(SH_TH1-SH_TH0)*(i+1)/(SH_NR-1),pos=[],idx=[];
+   for(let v=0;v<=SH_NV;v++)for(let u=0;u<=SH_NU;u++){const q=shP(a+(b-a)*u/SH_NU,v/SH_NV*Math.PI/2);pos.push(q.x,q.y,q.z)}
+   for(let v=0;v<SH_NV;v++)for(let u=0;u<SH_NU;u++){const q=v*(SH_NU+1)+u;idx.push(q,q+SH_NU+1,q+1,q+1,q+SH_NU+1,q+SH_NU+2)}
+   const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.setIndex(idx);geo.computeVertexNormals();
+   const m=add(geo,glassMat,0,0,0,scene,false);m.visible=false;shGlass.push(m)}}
+function updateShield(dt){
+  if(storm||shield.on){shield.k1=Math.min(1,shield.k1+dt/2.5);if(shield.k1>=1)shield.k2=Math.min(1,shield.k2+dt/3)}
+  else{shield.k2=Math.max(0,shield.k2-dt/2.5);if(shield.k2<=0)shield.k1=Math.max(0,shield.k1-dt/2)}
+  shRibs.forEach(m=>{m.visible=shield.k1>0;m.geometry.setDrawRange(0,Math.round(shield.k1*SH_SEG)*8*6)});
+  shRings.forEach(r=>r.m.visible=shield.k1>=r.sv/(Math.PI/2));
+  shGlass.forEach(m=>{m.visible=shield.k2>0;m.geometry.setDrawRange(0,Math.round(shield.k2*SH_NV)*SH_NU*6)})}
 
 /* 비·별 */
 const rainN=5000,rainGeo=new THREE.BufferGeometry(),rp=new Float32Array(rainN*3);
@@ -725,7 +1096,7 @@ const stars=new THREE.Points(starGeo,new THREE.PointsMaterial({color:0xffffff,si
 stars.visible=false;scene.add(stars);
 
 /* 상태 */
-let time='day',storm=false,floorView=9,exploded=false,walkOpen=true,domeOpen=true,walkK=1,domeK=1;
+let time='day',storm=false,floorView=9,exploded=false,walkOpen=true,domeOpen=true,walkK=1,domeK=1,doorOpen=false,doorK=0,unitOpen=false,unitK=0;
 function applyEnv(){
   const sky={day:0xbfe3f5,dusk:0xf2c194,night:0x0b1626}[time];
   const skyC=new THREE.Color(storm?(time==='night'?0x1b2229:0x6f7a84):sky);
@@ -734,8 +1105,9 @@ function applyEnv(){
   if(time==='day'){sun.position.set(30,45,30);sun.color.set(0xffffff);sun.intensity=storm?.7:2.4;hemi.intensity=storm?.7:.9}
   if(time==='dusk'){sun.position.set(-45,10,30);sun.color.set(0xffb070);sun.intensity=storm?.5:2.0;hemi.intensity=.55}
   if(night){sun.position.set(-20,40,30);sun.color.set(0x8fa8d8);sun.intensity=.25;hemi.intensity=.18}
-  lights.forEach(l=>l.intensity=night?40:(time==='dusk'?14:0));
+  lights.forEach(l=>l.intensity=night?40:(time==='dusk'?14:5));
   roofLights.forEach(l=>l.intensity=night?18:(time==='dusk'?6:0));
+  entryL.intensity=night?12:(time==='dusk'?4:0);lobbyL.intensity=night?10:6;
   bulbMat.emissiveIntensity=night?3:(time==='dusk'?1.2:0);
   M.lattice.emissive.set(night?0xffb070:0x000000);M.lattice.emissiveIntensity=night?.6:0;
   M.sea.color.set(storm?0x3e5866:night?0x0f2a3d:time==='dusk'?0x3a7f9a:0x2c8db3);
@@ -757,7 +1129,9 @@ function roofButtons(){
   const wb=document.getElementById('walkBtn'),db=document.getElementById('domeBtn');
   wb.textContent='무빙워크 지붕: '+(storm?'자동 닫힘':walkOpen?'열림':'닫힘');
   db.textContent='천문대 돔: '+(storm?'자동 닫힘':domeOpen?'열림':'닫힘');
-  wb.classList.toggle('on',!storm&&walkOpen);db.classList.toggle('on',!storm&&domeOpen)}
+  wb.classList.toggle('on',!storm&&walkOpen);db.classList.toggle('on',!storm&&domeOpen);
+  const sb=document.getElementById('shieldBtn');sb.textContent='태풍 보호막: '+(storm?'자동 내림':shield.on?'내림':'올림');sb.classList.toggle('on',storm||shield.on)}
+document.getElementById('shieldBtn').onclick=()=>{shield.on=!shield.on;roofButtons()};
 document.querySelectorAll('[data-lane]').forEach(b=>b.onclick=()=>{lanes[+b.dataset.lane].dir*=-1;laneButtons()});
 document.getElementById('walkBtn').onclick=()=>{walkOpen=!walkOpen;roofButtons()};
 document.getElementById('domeBtn').onclick=()=>{domeOpen=!domeOpen;roofButtons()};
@@ -775,23 +1149,222 @@ function pick(e){const r=renderer.domElement.getBoundingClientRect();
     if(o.isPoints||!shown(o))continue;const t=tagOf(o);if(t)return t;
     if(o.material&&o.material.transparent)continue;return null}
   return null}
-renderer.domElement.addEventListener('pointerdown',e=>downXY=[e.clientX,e.clientY]);
+renderer.domElement.addEventListener('pointerdown',e=>{downXY=[e.clientX,e.clientY];fly.q=[]});
 renderer.domElement.addEventListener('pointerup',e=>{
+  if(e.button!==0)return;
   if(!downXY||Math.hypot(e.clientX-downXY[0],e.clientY-downXY[1])>5)return;
   const t=pick(e);if(!t)return;
-  if(t==='dome')domeOpen=!domeOpen;else if(t==='walk')walkOpen=!walkOpen;
+  if(t==='dome')domeOpen=!domeOpen;else if(t==='walk')walkOpen=!walkOpen;else if(t==='door')doorOpen=!doorOpen;else if(t.startsWith('unitdoor:')){const u=unitDoors[+t.slice(9)];u.open=!u.open}else if(t==='roofdoor')roofDoor.open=!roofDoor.open;else if(t.startsWith('tdoor:')){const d=tDoors[+t.slice(6)];d.open=!d.open}else if(t.startsWith('gate:')){const gt=gates[+t.slice(5)];gt.open=!gt.open}
   else if(t.startsWith('lane:')){const l=lanes[+t.slice(5)];l.dir*=-1;laneButtons()}
   else if(t.startsWith('shade:')){const a=shadeArms.find(a=>a.key===t.slice(6));a.target=1-a.target;shadeButtons()}
   roofButtons()});
 renderer.domElement.addEventListener('pointermove',e=>{const now=performance.now();if(e.buttons||now-hoverT<80)return;hoverT=now;
   renderer.domElement.style.cursor=pick(e)?'pointer':''});
-const views={home:[[38,22,44],[0,6,0]],top:[[0,58,.1],[0,11,0]],sea:[[0,5,42],[0,7,0]],roof:[[12,20,14],[0,12,0]],walk:[[-24,9,-20],[-9,5,-9]]};
-document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{const[p,t]=views[b.dataset.view];camera.position.set(...p);controls.target.set(...t)});
+// 우클릭: 그 위치로 부드럽게 확대 이동 / 출입문 우클릭: 문 열고 로비 안으로 들어감
+const fly={q:[],t:0,from:null};
+function flyTo(list){fly.q=list.map(([p,t,d])=>({p:new THREE.Vector3(...p),t:new THREE.Vector3(...t),d:d||1.2}));fly.t=0;fly.from=null}
+function hitAt(e){const r=renderer.domElement.getBoundingClientRect();
+  ptr.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(ptr,camera);
+  for(const h of ray.intersectObjects(scene.children,true)){const o=h.object;
+    if(o.isPoints||!shown(o))continue;const t=tagOf(o);
+    if(!t&&o.material&&o.material.transparent)continue;return {tag:t,point:h.point}}
+  return null}
+renderer.domElement.addEventListener('contextmenu',e=>e.preventDefault());
+renderer.domElement.addEventListener('pointerup',e=>{
+  if(e.button!==2||!downXY||Math.hypot(e.clientX-downXY[0],e.clientY-downXY[1])>5)return;
+  const h=hitAt(e);if(!h)return;
+  if(h.tag==='door'){doorOpen=true;
+    flyTo([[[9.5,2.9,-6.6],[3,2.4,-6.6],1.3],[[2.4,2.85,-6.3],[-2.2,2.3,-7.6],1.6]]);return}
+  if(h.tag&&h.tag.startsWith('unitdoor:')){const u=unitDoors[+h.tag.slice(9)];u.open=true;const dy=u.y-1.22;   // 세대 현관 → 집 안 거실·바다 쪽으로
+    flyTo([[[0,2.8+dy,-7.6],[0,2.5+dy,-5.6],1.0],[[0,2.85+dy,-4.3],[0,2.2+dy,2.5],1.6]]);return}
+  const dir=camera.position.clone().sub(h.point);dir.setLength(Math.min(dir.length(),3.5));
+  flyTo([[h.point.clone().add(dir).toArray(),h.point.toArray(),1.1]])});
+const views={home:[[38,22,44],[0,6,0]],top:[[0,58,.1],[0,11,0]],sea:[[0,5,42],[0,7,0]],roof:[[12,20,14],[0,12,0]],walk:[[-24,9,-20],[-9,5,-9]],entry:[[9.2,2.7,-7.4],[3,2.3,-6.6]],elev:[[-9,19,-14],[-3.7,6,-7.5]],back:[[6,12,-30],[0,7,-7]]};
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{fly.q=[];const[p,t]=views[b.dataset.view];camera.position.set(...p);controls.target.set(...t)});
 camera.position.set(...views.home[0]);controls.target.set(...views.home[1]);
 applyEnv();applyFloors();shadeButtons();laneButtons();
 
 function resize(){const w=box.clientWidth,h=box.clientHeight;if(!w||!h)return;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix()}
 new ResizeObserver(resize).observe(box);window.addEventListener('resize',resize);resize();
+
+/* ── 구경하기: 캐릭터 이동 시뮬레이션 ── */
+const visitor=new THREE.Group();visitor.visible=false;scene.add(visitor);
+const vLegs=[],vArms=[];
+{const skin=std(0xf1c9a5),shirt=std(0xf2b134),pants=std(0x3d4f6b),hair=std(0x3a2a1e);
+ add(new THREE.CylinderGeometry(.18,.21,.62,12),shirt,0,1.13,0,visitor);
+ add(new THREE.SphereGeometry(.15,14,12),skin,0,1.6,0,visitor);
+ add(new THREE.SphereGeometry(.155,14,8,0,Math.PI*2,0,Math.PI/2),hair,0,1.63,-.015,visitor);
+ add(new THREE.BoxGeometry(.11,.035,.03),std(0x222222),0,1.62,.145,visitor);           // 눈(앞 방향)
+ for(const sx of[-.09,.09]){const l=new THREE.Group();l.position.set(sx,.82,0);visitor.add(l);add(new THREE.BoxGeometry(.13,.8,.15),pants,0,-.4,0,l);vLegs.push(l)}
+ for(const sx of[-.25,.25]){const a=new THREE.Group();a.position.set(sx,1.4,0);visitor.add(a);add(new THREE.BoxGeometry(.09,.56,.1),shirt,0,-.28,0,a);vArms.push(a)}}
+const capEl=document.getElementById('tourCap');
+const MAINDOOR=new THREE.Vector3(3.09,L1,-6.6);
+const sim={active:false,walk:null,timers:[],waits:[],attach:false,face:null,phase:0,caption:'',log:[],hitIds:new Set(),name:'',speed:1.6};
+let fastMode=false,tourRun=0;
+const simRay=new THREE.Raycaster();simRay.far=.3;
+function simSleep(s){return new Promise(r=>sim.timers.push({t:s,r}))}
+function simUntil(fn){return new Promise(r=>sim.waits.push({fn,r}))}
+function simWalk(pts,speed=sim.speed,ride=false,noProbe=false){return new Promise(r=>{sim.walk={pts:pts.map(p=>new THREE.Vector3(...p)),i:0,speed,ride,noProbe,r}})}
+function say(t){sim.caption=t;capEl.textContent=t;capEl.style.display=t?'block':'none'}
+function inBuilding(p){return (Math.hypot(p.x,p.z)<5.25&&p.y>1.1&&p.y<10.6)||(p.x>-2.85&&p.x<2.85&&p.z>-9.45&&p.z<-5.5&&p.y>1.1&&p.y<13.8)}
+function probe(dx,dz){const p=visitor.position;
+  for(const h of[.45,1.25]){simRay.set(new THREE.Vector3(p.x,p.y+h,p.z),new THREE.Vector3(dx,0,dz));
+    for(const x of simRay.intersectObjects(scene.children,true)){const o=x.object;let a=o,skip=false;
+      while(a){if(a===visitor||!a.visible){skip=true;break}a=a.parent}
+      if(skip||o.isPoints||o.isLine)continue;
+      if(!sim.hitIds.has(o.uuid)){sim.hitIds.add(o.uuid);const c=o.material&&o.material.color?o.material.color.getHexString():'';
+        sim.log.push(`${sim.name} / ${sim.caption}: 막힘(높이 ${h}) ${o.geometry.type} #${c} @(${x.point.x.toFixed(2)}, ${x.point.y.toFixed(2)}, ${x.point.z.toFixed(2)})`)}
+      break}}}
+function simUpdate(dt){
+  for(let i=sim.timers.length-1;i>=0;i--){const tm=sim.timers[i];tm.t-=dt;if(tm.t<=0){sim.timers.splice(i,1);tm.r()}}
+  for(let i=sim.waits.length-1;i>=0;i--){const w=sim.waits[i];if(w.fn()){sim.waits.splice(i,1);w.r()}}
+  let moving=false;
+  if(sim.attach)visitor.position.set(EX,elev.y,EZ);
+  else if(sim.walk){const w=sim.walk,tgt=w.pts[w.i],p=visitor.position,d=tgt.clone().sub(p),dist=d.length(),st=w.speed*dt,hd=Math.hypot(d.x,d.z);
+    if(hd>.02)sim.face=Math.atan2(d.x,d.z);
+    if(!w.ride&&!w.noProbe&&hd>.05)probe(d.x/hd,d.z/hd);
+    if(dist<=st){p.copy(tgt);w.i++;if(w.i>=w.pts.length){sim.walk=null;w.r()}}else p.addScaledVector(d,st/dist);
+    moving=!w.ride}
+  if(sim.face!=null){let df=sim.face-visitor.rotation.y;df=Math.atan2(Math.sin(df),Math.cos(df));visitor.rotation.y+=df*Math.min(1,dt*8)}
+  sim.phase+=moving?dt*9:0;const sw=moving?Math.sin(sim.phase)*.55:0;
+  vLegs[0].rotation.x=sw;vLegs[1].rotation.x=-sw;vArms[0].rotation.x=-sw*.7;vArms[1].rotation.x=sw*.7}
+
+// ── 이동 동작들 ──
+const W=(pts,sp)=>simWalk(pts,sp);
+const face=deg=>{sim.face=D(deg)};      // 0=남(바다), 90=동, 180=북, -90=서
+async function gateToLobby(){
+  say('정문 · 동쪽 보행로');visitor.position.set(10.6,1.04,-20.4);visitor.rotation.y=0;sim.face=0;
+  await W([[10.6,1.04,-7.2]]);
+  say('완만한 경사로 (4%) · 계단 없음');await W([[10.6,1.22,-2.6],[10.6,1.22,-1.4]]);
+  say('동쪽 1층 데크 → 현관 앞마당');await W([[7.0,1.22,-1.6],[6.1,1.22,-2.8],[5.8,1.22,-4.0],[5.0,1.22,-6.6]]);
+  say('주출입문 (자동문 · 문턱 없음)');await W([[3.6,1.22,-6.6],[2.0,1.22,-6.6]]);
+  say('현관 로비 · 왼쪽 유리 엘리베이터, 안쪽 101호');await simSleep(1.2)}
+async function takeElevator(si){
+  const y0=visitor.position.y;let cur=ESTOPS.findIndex(v=>Math.abs(v-y0)<.1);
+  say('유리 엘리베이터 호출');await W([[-2.0,y0,-7.55]]);face(-90);
+  elev.manual=true;elev.doorOpen=false;elev.goto=cur;await simUntil(()=>elev.goto==null);
+  elev.doorOpen=true;await simSleep(1.2);
+  say('엘리베이터 타기');await W([[EX,y0,EZ]]);face(90);await simSleep(.4);
+  elev.doorOpen=false;await simSleep(1.1);
+  say('유리 엘리베이터 · '+['1층','2층','3층','옥상'][si]+'(으)로 올라가는 중 · 바깥 풍경이 보여요');
+  sim.attach=true;elev.goto=si;await simUntil(()=>elev.goto==null);
+  elev.doorOpen=true;await simSleep(1.1);sim.attach=false;
+  say(['1층','2층','3층','옥상층'][si]+' 공용홀');await W([[-2.0,ESTOPS[si],-7.55]]);elev.doorOpen=false}
+async function unitTour(fl){
+  const y=[1.22,4.57,7.77][fl],no=['101','201','301'][fl];
+  say(no+'호 현관문');await W((fl===0?[[0,y,-7.2]]:[[-1.4,y,-7.05],[0,y,-7.05]]).concat([[0,y,-6.4],[0,y,-5.7],[0,y,-4.6]]));   // 계단·열린 문짝을 피해 정면으로 접근await simSleep(.6);
+  say(no+'호 · 현관 (신발장)');await simSleep(.6);
+  say('복도');await W([[0,y,-3.0],[0,y,-1.35]]);
+  say('안방');await W([[-1.6,y,-1.35],[-3.0,y,-.8]]);face(160);await simSleep(1.3);
+  await W([[-1.6,y,-1.35],[0,y,-1.35]]);
+  say('작은방');await W([[1.5,y,-1.35],[2.6,y,-1.0]]);face(150);await simSleep(1.0);
+  say('드레스룸 · 세탁실');await W([[2.6,y,-1.85],[3.75,y,-1.85],[3.75,y,-2.6]]);face(180);await simSleep(1.0);
+  await W([[3.75,y,-1.85],[2.6,y,-1.85],[2.6,y,-1.0],[1.5,y,-1.35],[0,y,-1.35]]);
+  say('욕실');await W([[0,y,-3.5],[1.5,y,-3.55]]);face(120);await simSleep(1.0);
+  await W([[0,y,-3.5],[0,y,-1.35]]);
+  say('부엌 (조리대 · 아일랜드)');await W([[0,y,1.5],[-2.8,y,1.5]]);face(-160);await simSleep(1.0);
+  say('식당');await W([[-1.2,y,1.6],[-.6,y,3.0]]);face(-90);await simSleep(.8);
+  say('거실 · 벽난로');await W([[.6,y,2.4]]);face(90);await simSleep(1.2);
+  say('바다 전망 창');await W([[-.3,y,4.5]]);face(0);await simSleep(1.2);
+  const yo=fl===0?1.22:y+.01;
+  say(fl===0?'테라스 문 → 바다 테라스':'발코니 문 → '+(fl+1)+'층 발코니');await W([[0,y,4.8],[0,yo,5.9],[0,yo,6.4]]);face(0);await simSleep(1.6)}
+async function rideLane(li){const l=lanes[li];l.dir=1;laneButtons();const p0=l.pts[0],side=p0.x<0?1:-1;
+  await W([[p0.x,p0.y,p0.z+1.0],[p0.x,p0.y,p0.z]]);
+  say(['무빙워크 ① 1층 → 2층','무빙워크 ② 2층 → 3층','무빙워크 ③ 3층 → 옥상'][li]+' · 서 있으면 올라가요');
+  await simWalk(l.pts.map(v=>[v.x,v.y,v.z]),1.5,true);
+  const e=l.pts[l.pts.length-1];await W([[e.x,e.y,e.z+1.0]])}
+async function roofWalk(){
+  say('옥상 출입문');await W([[0,10.97,-7.2],[0,10.97,-6.3],[0,10.97,-5.7],[0,11.02,-4.4]]);
+  say('북쪽 비막이 터널 → 천문대 돔');await W([[0,11.02,-3.0],[1.25,11.02,-1.2]]);await simSleep(.6);
+  say('남쪽 터널 · 바다 보며 식탁');await W([[1.1,11.02,2.6],[1.3,11.02,3.3],[1.3,11.02,6.2]]);face(0);await simSleep(1.6)}
+const TOURS={
+  g1:{name:'정문 → 1층 집',fn:async()=>{await gateToLobby();await unitTour(0)}},
+  g2:{name:'정문 → 2층 집',fn:async()=>{await gateToLobby();await takeElevator(1);await unitTour(1)}},
+  g3:{name:'정문 → 3층 집',fn:async()=>{await gateToLobby();await takeElevator(2);await unitTour(2)}},
+  e2:{name:'엘리베이터 → 2층',fn:async()=>{await gateToLobby();await takeElevator(1);say('2층 공용홀 · 201호 현관 앞');await W([[-1.4,4.57,-7.05],[0,4.57,-7.05],[0,4.57,-6.5]]);face(0);await simSleep(1.5)}},
+  e3:{name:'엘리베이터 → 3층',fn:async()=>{await gateToLobby();await takeElevator(2);say('3층 공용홀 · 301호 현관 앞');await W([[-1.4,7.77,-7.05],[0,7.77,-7.05],[0,7.77,-6.5]]);face(0);await simSleep(1.5)}},
+  er:{name:'엘리베이터 → 옥상',fn:async()=>{await gateToLobby();await takeElevator(3);await roofWalk()}},
+  mw:{name:'무빙워크로 옥상까지',fn:async()=>{await gateToLobby0();
+    say('기단 데크를 따라 바다 쪽으로 · 서쪽 1층 데크');await W([[6.3,1.22,1.1],[4.5,1.22,4.5],[0,1.22,6.3],[-4.5,1.22,4.5],[-6.3,1.22,1.1],[-7.4,1.22,-1.2],[-10.83,1.22,-.9]]);
+    await rideLane(0);say('동쪽 2층 데크');await W([[13.59,4.57,-1.2]]);await rideLane(1);
+    say('서쪽 3층 데크');await W([[-13.59,7.77,-.9],[-10.83,7.77,-.9]]);await rideLane(2);
+    say('옥상 동쪽 데크 → 동쪽 터널');await W([[7.0,10.97,-.3],[5.0,11.02,0],[3.0,11.02,0]]);face(-90);await simSleep(1.5)}},
+  wr:{name:'서쪽 경사로 → 2층 발코니',fn:async()=>{
+    say('서쪽 보행로');visitor.position.set(-18.9,1.04,-20.4);visitor.rotation.y=0;sim.face=0;
+    await W([[-18.9,1.04,-.2],[-18.9,1.04,.7]]);
+    say('완만한 경사로 (4%) → 서쪽 1층 데크');await W([[-15.3,1.22,.7],[-13.8,1.22,.7],[-13.8,1.22,-.9],[-10.83,1.22,-.9]]);
+    await rideLane(0);say('동쪽 2층 데크 → 2층 발코니');
+    await W([[8.0,4.57,-.5],[6.5,4.58,1.5],[5.7,4.58,2.7],[3.2,4.58,5.4],[0,4.58,6.3]]);face(0);await simSleep(1.6)}},
+  sp:{name:'동쪽 나선계단 → 옥상',fn:async()=>{
+    const cx=16.7,cz=-.5,a0=67.5,tops=[];for(let k=0;k<6;k++)tops.push((k+1)*LV[0]/6);
+    for(let f=0;f<3;f++)for(let j=0;j<16;j++)tops.push(LV[f]+(j+1)*(LV[f+1]-LV[f])/16);
+    const at=(k,r=.72)=>{const a=D(a0+22.5*k);return[cx+r*Math.cos(a),Math.max(1.0,tops[k]),cz-r*Math.sin(a)]};
+    say('동쪽 나선계단 입구');visitor.position.set(18.6,1.0,-6);visitor.rotation.y=Math.PI;sim.face=Math.PI;
+    await W([at(2,2.0),at(3)]);say('나선계단 오르는 중 (2층 · 3층 데크를 지나 옥상까지)');
+    const pts=[];for(let k=4;k<54;k++)pts.push(at(k));await simWalk(pts,1.1,false,true);
+    say('옥상 동쪽 데크 → 동쪽 터널');await W([[15.0,10.97,-.5],[7.0,10.97,-.3],[5.0,11.02,0],[3.0,11.02,0]]);face(-90);await simSleep(1.5)}},
+  st:{name:'계단으로 옥상까지',fn:async()=>{await gateToLobby();
+    const r1=3.35/17,run=3.5/16,f1=[],f2=[],f3=[];
+    for(let k=0;k<17;k++)f1.push([2.62-k*.25,1.22+(k+1)*r1,-8.85]);
+    for(let k=0;k<16;k++)f2.push([-1.3+(k+.5)*run,4.57+(k+1)*.2,-7.8]);
+    for(let k=0;k<16;k++)f3.push([2.2-(k+.5)*run,7.77+(k+1)*.2,-8.85]);
+    say('로비 계단 → 2층');await W([[2.62,1.22,-7.9]]);await simWalk(f1,1.0,false,true);await W([[-2.0,4.57,-8.85]]);
+    say('2층 계단참 → 3층');await W([[-1.6,4.57,-7.8]]);await simWalk(f2,1.0,false,true);await W([[2.5,7.77,-7.8]]);
+    say('3층 계단참 → 옥상층');await W([[2.5,7.77,-8.85]]);await simWalk(f3,1.0,false,true);await W([[-2.0,10.97,-8.85]]);
+    say('옥상층 홀');await W([[-2.0,10.97,-7.55]]);await roofWalk()}},
+  tr:{name:'바다 테라스',fn:async()=>{await gateToLobby0();
+    say('기단 데크 → 바다 전망 테라스');await W([[6.3,1.22,1.1],[4.4,1.22,4.6],[2.4,1.22,9.3]]);face(0);say('바다 전망 테라스 · 곡면 방파벽 너머 바다');await simSleep(2)}}
+};
+async function gateToLobby0(){  // 정문에서 동쪽 1층 데크까지만
+  say('정문 · 동쪽 보행로');visitor.position.set(10.6,1.04,-20.4);visitor.rotation.y=0;sim.face=0;
+  await W([[10.6,1.04,-7.2]]);say('완만한 경사로 (4%) · 계단 없음');await W([[10.6,1.22,-2.6],[10.6,1.22,-1.4],[7.4,1.22,-1.2]])}
+async function runTour(id){
+  stopTour();const run=++tourRun;
+  sim.active=true;sim.name=TOURS[id].name;sim.log=[];sim.hitIds.clear();sim.walk=null;sim.face=0;
+  floorView=9;exploded=false;applyFloors();document.querySelectorAll('[data-floor]').forEach(x=>x.classList.toggle('on',x.dataset.floor==='9'));
+  document.getElementById('explode').classList.remove('on');
+  visitor.visible=true;elder.visible=false;controls.enabled=false;fly.q=[];
+  document.querySelectorAll('[data-tour]').forEach(b=>b.classList.toggle('on',b.dataset.tour===id));
+  const pr=TOURS[id].fn();sim.snap=true;await pr;
+  if(run!==tourRun)return;
+  say('구경 끝! · '+(sim.log.length?'막힌 곳 '+sim.log.length+'군데 기록됨':'막힌 곳 없이 이동 완료'));
+  await simSleep(2.5);if(run===tourRun)stopTour()}
+function stopTour(){tourRun++;sim.active=false;sim.walk=null;sim.timers=[];sim.waits=[];sim.attach=false;
+  visitor.visible=false;elder.visible=true;controls.enabled=true;
+  if(elev.manual){elev.manual=false;elev.doorOpen=false;elev.goto=null;let b=0;ESTOPS.forEach((v,i)=>{if(Math.abs(v-elev.y)<Math.abs(ESTOPS[b]-elev.y))b=i});
+    elev.y=ESTOPS[b];elev.i=b;elev.dir=b===ESTOPS.length-1?-1:1;elev.wait=2}
+  document.querySelectorAll('[data-tour]').forEach(b=>b.classList.remove('on'));say('')}
+document.querySelectorAll('[data-tour]').forEach(b=>b.onclick=()=>runTour(b.dataset.tour));
+document.getElementById('tourStop').onclick=()=>stopTour();
+document.getElementById('tourToggle').onclick=()=>document.getElementById('tourPanel').classList.toggle('open');
+// 점검용: 화면 없이 빠르게 끝까지 돌려 막힌 곳 목록을 돌려줌
+window.__dhDbg={unitDoors,roofDoor,sim,visitor,elev,lanes,tick,runTour,stopTour};
+window.__dhTest=async(id,maxT=600)=>{fastMode=true;runTour(id);let tt=0;
+  while(sim.active&&tt<maxT){scene.updateMatrixWorld();tick(1/30);tt+=1/30;for(let j=0;j<8;j++)await null}
+  fastMode=false;const r={done:!sim.active,t:+tt.toFixed(1),pos:visitor.position.toArray().map(v=>+v.toFixed(2)),cap:sim.caption,log:sim.log.slice()};stopTour();return r};
+
+// 문·엘리베이터·캐릭터를 한 프레임 진행
+function tick(dt){
+  const vp=visitor.position,near=(q,r)=>sim.active&&vp.distanceTo(q)<r;
+  unitDoors.forEach(u=>{const o=u.open||near(u.pos,2.6);u.k+=((o?1:0)-u.k)*Math.min(1,dt*3);u.g.rotation.y=u.k*1.6});
+  const mo=doorOpen||near(MAINDOOR,3.2);doorK+=((mo?1:0)-doorK)*Math.min(1,dt*3);doorPanels.forEach(d=>d.dp.position.z=-6.6+d.sx*(.6+1.15*doorK));
+  const ro=roofDoor.open||near(roofDoor.pos,3.0);roofDoor.k+=((ro?1:0)-roofDoor.k)*Math.min(1,dt*3);roofDoorPanels.forEach(d=>d.dp.position.x=d.sx*(.31+.58*roofDoor.k));
+  tDoors.forEach(d=>{const o=d.open||near(d.pos,2.4);d.k+=((o?1:0)-d.k)*Math.min(1,dt*3);d.pn.forEach(p=>p.dp.position.x=p.sx*(d.jx/2+d.jx*.95*d.k))});
+  gates.forEach(gt=>{const o=gt.open||near(gt.pos,2.4);gt.k+=((o?1:0)-gt.k)*Math.min(1,dt*3);let da=gt.a1-gt.a0;da=Math.atan2(Math.sin(da),Math.cos(da));gt.g.rotation.y=gt.a0+da*gt.k});
+  if(elev.manual){if(elev.goto!=null){const d=ESTOPS[elev.goto]-elev.y;if(Math.abs(d)<.005){elev.y=ESTOPS[elev.goto];elev.goto=null}else elev.y+=Math.sign(d)*Math.min(Math.abs(d),dt*1.2)}}
+  else if(elev.wait>0)elev.wait-=dt;else{const d=elev.stops[elev.i]-elev.y;
+    if(Math.abs(d)<.01){elev.y=elev.stops[elev.i];elev.wait=4;if(elev.i===elev.stops.length-1)elev.dir=-1;else if(elev.i===0)elev.dir=1;elev.i+=elev.dir}
+    else elev.y+=Math.sign(d)*Math.min(Math.abs(d),dt*1.0)}
+  cab.position.y=elev.y;
+  landDoors.forEach(d=>{const at=Math.abs(elev.y-ESTOPS[d.si])<.02;const open=elev.manual?(elev.doorOpen&&elev.goto==null&&at):(elev.wait>.6&&at);
+    d.k+=((open?1:0)-d.k)*Math.min(1,dt*4);d.pr.forEach(p=>p.g.position.z=-7.55+p.sz*(.28+.5*d.k))});
+  if(sim.active)simUpdate(dt)}
+function followCam(dt){
+  const p=visitor.position,h=visitor.rotation.y,fwd=new THREE.Vector3(Math.sin(h),0,Math.cos(h)),rt=new THREE.Vector3(-fwd.z,0,fwd.x);
+  let cam,tg;
+  if(inBuilding(p)&&!sim.attach){cam=p.clone().add(new THREE.Vector3(0,1.95,0)).addScaledVector(fwd,-.95).addScaledVector(rt,.35);tg=p.clone().add(new THREE.Vector3(0,1.4,0)).addScaledVector(fwd,2.2)}
+  else{cam=p.clone().add(new THREE.Vector3(0,2.7,0)).addScaledVector(fwd,-4.8);tg=p.clone().add(new THREE.Vector3(0,1.3,0)).addScaledVector(fwd,1.5)}
+  const k=sim.snap?1:1-Math.exp(-dt*3);sim.snap=false;camera.position.lerp(cam,k);controls.target.lerp(tg,k)}
 
 const clock=new THREE.Clock();let t=0;
 function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);t+=dt;
@@ -804,13 +1377,22 @@ function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDel
   M.fire.emissiveIntensity=(time==='night'?3:1.5)*fl;bbqFire.emissiveIntensity=(time==='night'?2.5:1.2)*fl;
   shadeArms.forEach(a=>{const tg=storm?1:a.target;a.t+=(tg-a.t)*Math.min(1,dt*2.2);a.segs.forEach(s=>s.g.position.z=s.open+(s.closed-s.open)*a.t)});
   lanes.forEach(l=>{l.tex.offset.y=(l.tex.offset.y+l.dir*dt*.8+1)%1;
-    l.riders.forEach(r=>{r.u=(r.u+l.dir*dt*.025+1)%1;const[pos,i]=laneAt(l,r.u);r.p.position.copy(pos);
+    l.riders.forEach(r=>{r.u=(r.u+l.dir*dt*.025+1)%1;const[pos,i]=laneAt(l,r.u);r.p.position.copy(pos);if(r.off){const tv=l.pts[i+1].clone().sub(l.pts[i]).setY(0).normalize();r.p.position.x+=tv.z*r.off;r.p.position.z-=tv.x*r.off}
       const tg=(l.dir>0?l.pts[i+1]:l.pts[i]).clone();tg.y=pos.y;if(tg.distanceToSquared(pos)>1e-4)r.p.lookAt(tg)})});
+  tick(dt);if(sim.active)followCam(dt);
+  updateShield(dt);
   walkK+=((storm||!walkOpen?0:1)-walkK)*Math.min(1,dt*1.5);
   domeK+=((storm||!domeOpen?0:1)-domeK)*Math.min(1,dt*1.2);
   walkRoof.forEach(w=>w.m.rotation.z=w.closed+(w.open-w.closed)*walkK);
   petals.forEach(p=>p.g.rotation.y=p.closed+(p.open-p.closed)*domeK);
   if(time==='night'&&!storm)scope.rotation.y+=dt*.06;
+  if(fly.q.length){const k=fly.q[0];if(!fly.from)fly.from={p:camera.position.clone(),t:controls.target.clone()};
+    fly.t+=dt/k.d;const e=Math.min(1,fly.t),sm=e*e*(3-2*e);
+    camera.position.lerpVectors(fly.from.p,k.p,sm);controls.target.lerpVectors(fly.from.t,k.t,sm);
+    if(e>=1){fly.q.shift();fly.from=null;fly.t=0}}
+  // 실내(현관 로비)에 들어가면 화각을 넓힘
+  const cp=camera.position,inside=(cp.y>1.2&&cp.y<3.82&&Math.abs(cp.x)<2.8&&cp.z>-9.6&&cp.z<-4.9)||(cp.y>1.2&&cp.y<10.6&&Math.hypot(cp.x,cp.z)<5.2);
+  const fv=inside?72:42;if(Math.abs(camera.fov-fv)>.1){camera.fov+=(fv-camera.fov)*Math.min(1,dt*4);camera.updateProjectionMatrix()}
   controls.update();renderer.render(scene,camera)}
 animate();
 </script>
