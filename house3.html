@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>거품 마을</title>
+<style>
+:root{--bg:#f6f8fa;--card:#fff;--ink:#22303c;--sub:#6b7785;--line:#dbe2e8;--acc:#2f6f9f}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif}
+body{display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 16px;background:#fff;border-bottom:1px solid var(--line)}
+h1{font-size:18px;margin:0}.sub{color:var(--sub);font-size:12px}
+nav{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+button{font:inherit;font-size:12px;padding:6px 10px;border:1px solid var(--line);background:#fff;border-radius:8px;color:var(--ink);cursor:pointer}
+button:hover{border-color:#a9b7c3}
+button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+main{flex:1;min-height:0}
+section{display:none;height:100%;overflow:auto}section.on{display:block}
+#view3d{position:relative;height:100%;min-height:420px;overflow:hidden}#view3d canvas{display:block}
+.ctl{position:absolute;left:12px;bottom:12px;background:rgba(255,255,255,.95);border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:6px;max-width:calc(100% - 24px)}
+.row{display:flex;gap:5px;align-items:center;flex-wrap:wrap}.lbl{font-size:11px;color:var(--sub);width:58px}
+.num{font-weight:700;font-size:12px;min-width:150px;text-align:center;color:var(--acc)}
+.hint{position:absolute;right:12px;top:12px;background:rgba(255,255,255,.92);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:11px;color:var(--sub);max-width:270px;line-height:1.6}
+.cap{position:absolute;left:50%;top:14px;transform:translateX(-50%);background:rgba(34,48,60,.86);color:#fff;padding:7px 14px;border-radius:20px;font-size:13px;display:none;max-width:80%;text-align:center}
+.sheet{max-width:1000px;margin:0 auto;padding:20px 16px 40px}
+.sheet h2{margin:0 0 6px}.cap2{color:var(--sub);font-size:13px;line-height:1.6}
+.paper{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px}.paper svg{width:100%;height:auto;display:block}
+.memo p,.memo li,.memo td{line-height:1.7;font-size:14px}.memo h3{margin-top:22px;color:var(--acc)}
+.memo table{border-collapse:collapse;width:100%;background:#fff}.memo th,.memo td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}.memo th{background:#eef4f8}
+.note{background:#fff8e6;border:1px solid #f0dca8;border-radius:10px;padding:12px;font-size:13px;line-height:1.7}
+.uitog{margin-left:6px}
+body.ui-off .ctl,body.ui-off .hint{display:none}
+@media(max-width:768px){.sub{display:none}nav{margin-left:0}.ctl{left:8px;right:8px;bottom:8px}.lbl{width:auto}}
+</style>
+</head>
+<body>
+<header>
+  <h1>거품 마을</h1>
+  <span class="sub">거품 집(켈빈 셀)을 줄기 타워에 붙여 위·옆으로 계속 키우는 조립식 마을 · 프로토타입 1차</span>
+  <button id="uiToggle" class="uitog">☰ 메뉴</button>
+  <nav id="tabs">
+    <button data-t="t3d" class="on">3D 모델</button>
+    <button data-t="tstruct">구조 개념</button>
+    <button data-t="tmemo">설계 메모</button>
+  </nav>
+</header>
+<main>
+  <section id="t3d" class="on">
+    <div id="view3d">
+      <div class="hint">드래그: 회전 · 휠: 확대 · 우클릭 드래그: 이동<br><b>우클릭</b>: 그 위치로 확대 이동<br><b>거품 +</b>: 크레인이 새 거품 집을 붙여요 (아래가 받쳐 주는 자리만)<br><b>줄기 타워 +</b>: 옆으로 마을을 넓혀요</div>
+      <div class="cap" id="cap"></div>
+      <div class="ctl">
+        <div class="row"><span class="lbl">키우기</span><button id="grow1">거품 +1</button><button id="grow10">거품 +10</button><button id="trunkPlus">줄기 타워 +</button><button id="replay">처음부터 자라기</button></div>
+        <div class="row"><span class="lbl">현재</span><span class="num" id="count"></span></div>
+        <div class="row"><span class="lbl">시간</span><button data-time="day" class="on">낮</button><button data-time="dusk">노을</button><button data-time="night">밤</button></div>
+        <div class="row"><span class="lbl">보기</span><button id="labelBtn" class="on">이름표</button></div>
+        <div class="row"><span class="lbl">시점</span><button data-view="home">전체</button><button data-view="top">위에서</button><button data-view="street">거리에서</button><button data-view="inside">거품 집 안</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tstruct"><div class="sheet">
+    <h2>구조 개념 (옆에서 본 단면)</h2>
+    <p class="cap2">가운데 <b>줄기 타워</b>(엘리베이터·계단·배관)에 <b>거품 집</b>이 열매처럼 붙습니다. 거품끼리는 벽을 나눠 쓰며 맞물려 서로 받쳐 주고, 줄기 사이 빈 칸은 <b>빛 마당</b>으로 남겨 모든 집에 햇빛과 바람이 들게 합니다. 줄기를 20m마다 하나씩 더 세우면 마을이 옆으로 계속 넓어집니다.</p>
+    <div class="paper" id="svgStruct"></div>
+  </div></section>
+
+  <section id="tmemo"><div class="sheet memo">
+    <h2>설계 메모 — 거품 마을 프로토타입 1차</h2>
+    <h3>1. 개념</h3>
+    <p>비눗방울 거품처럼 칸들이 빈틈없이 맞물리는 <b>거품 구조</b>로 집을 쌓습니다. 거품 한 칸이 한 집이고, 같은 모양 거품을 공장에서 찍어 와 마을 표면 어디에든 붙여 위·옆·대각선으로 키웁니다. house2(원통 탑)가 위로만 자란다면, 거품 마을은 어느 방향으로든 자랍니다.</p>
+    <h3>2. 거품 한 칸 = 켈빈 셀</h3>
+    <ul>
+      <li><b>모양</b>: 깎은 정팔면체(정사각형 면 6개 + 육각형 면 8개). 이 모양 하나만으로 공간을 빈틈없이 채울 수 있어 <b>모듈이 한 종류</b>뿐입니다.</li>
+      <li><b>크기</b>: 폭·높이 10m. 바닥판을 아래쪽에 끼워 <b>바닥 약 68㎡ + 다락(침실)</b>의 복층 집이 됩니다. 바닥 아래 남는 공간은 배관·수납 자리입니다.</li>
+      <li><b>껍질</b>: 철골 모서리 틀 + 투명 공기 베개 막(ETFE). 베이징 '워터큐브'가 같은 거품 구조와 막을 썼습니다. 사생활은 막 안의 인쇄 무늬·전동 블라인드로 조절합니다.</li>
+      <li><b>공유 벽</b>: 이웃 거품과 면을 함께 써서 재료가 적게 들고, 전체가 뼈처럼 가볍고 튼튼한 그물이 됩니다.</li>
+    </ul>
+    <h3>3. 자라는 규칙</h3>
+    <table>
+      <tr><th>규칙</th><th>이유</th></tr>
+      <tr><td>아래에 받쳐 주는 거품(또는 줄기 타워)이 있어야 붙일 수 있음</td><td>허공에 뜬 집이 없게 — 무게가 아래로 전해짐</td></tr>
+      <tr><td>줄기 타워 바로 둘레 자리에만 붙임 (층마다 4집)</td><td>어느 집이든 짧은 브리지로 엘리베이터·계단에 바로 닿음 (남의 집을 지나지 않음)</td></tr>
+      <tr><td>줄기 사이 대각선 자리는 비워 둠</td><td>빛 마당 — 모든 집이 바깥에 닿아 햇빛·바람이 듦</td></tr>
+      <tr><td>줄기 타워는 20m 간격</td><td>피난 거리를 짧게 유지하면서 마을을 옆으로 무한정 넓힐 수 있음</td></tr>
+      <tr><td>높이는 12단(약 65m)까지</td><td>거품만으로 받치는 높이의 한계 — 그 위는 줄기 구조를 키워야 함</td></tr>
+    </table>
+    <h3>4. 줄기 타워</h3>
+    <p>사각 유리 타워(대각선 4.5m) 안에 엘리베이터·피난 계단·배관·전기가 들어갑니다. 거품 집을 매달아 주는 등뼈이자, 층마다 브리지로 집과 이어지는 길입니다. 줄기를 하나 더 세우면 그 둘레에 새 거품 자리가 생깁니다(3D <b>줄기 타워 +</b>).</p>
+    <h3>5. 조립 순서</h3>
+    <ol>
+      <li>줄기 타워 기초 → 타워 세우기</li>
+      <li>공장에서 거품 집(틀·막·바닥판·실내 키트)을 통째로 만들어 운반</li>
+      <li>크레인으로 받쳐 주는 자리에 내려 끼우고, 이웃 거품·줄기와 볼트 접합 + 브리지 연결</li>
+      <li>집이 필요할 때마다 반복 (3D <b>처음부터 자라기</b>)</li>
+    </ol>
+    <h3>6. 확인할 점 (다음에 다듬을 것)</h3>
+    <div class="note">
+      ① 거품끼리 맞닿는 면의 방수·방화·층간 소음 ② 투명 막의 여름 더위·겨울 단열 ③ 불이 났을 때 막이 녹아 연기를 빼는 장점과 번짐 방지 ④ 아래쪽 거품 틀 굵기(아래로 갈수록 두껍게) ⑤ 줄기 타워 피난 계단 2개 확보 ⑥ 구경하기(캐릭터 이동), 집 내부 평면, 빛 마당 정원은 다음 차수에서 자세히. 치수는 프로토타입용 가정값입니다.
+    </div>
+  </div></section>
+</main>
+
+<script>
+const uiBtn=document.getElementById('uiToggle');
+function setUI(on){document.body.classList.toggle('ui-off',!on);uiBtn.classList.toggle('on',on);uiBtn.textContent=on?'☰ 메뉴 숨기기':'☰ 메뉴 보기'}
+setUI(!(matchMedia('(max-width: 768px)').matches||matchMedia('(pointer: coarse)').matches));
+uiBtn.onclick=()=>setUI(document.body.classList.contains('ui-off'));
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('main section').forEach(s=>s.classList.toggle('on',s.id===b.dataset.t));
+  window.dispatchEvent(new Event('resize'))});
+/* 구조 개념 그림: 줄기 2개 + 둘레 거품(옆에서 본 팔각형) */
+(function(){
+  const T=(x,y,t,s=1.6,c='#333',w=600,a='middle')=>`<text x="${x}" y="${y}" font-size="${s}" fill="${c}" font-weight="${w}" text-anchor="${a}" font-family="Malgun Gothic,sans-serif">${t}</text>`;
+  const Y=y=>-y;let s=`<svg viewBox="-34 -72 104 80" xmlns="http://www.w3.org/2000/svg"><rect x="-34" y="-72" width="104" height="80" fill="#f8fbfd"/><rect x="-34" y="0" width="104" height="8" fill="#e6e1d6"/>`;
+  const oct=(cx,cy,f,st)=>{const p=[[5,2.5],[2.5,5],[-2.5,5],[-5,2.5],[-5,-2.5],[-2.5,-5],[2.5,-5],[5,-2.5]].map(([x,y])=>`${cx+x*.96},${Y(cy+y*.96)}`).join(' ');return`<polygon points="${p}" fill="${f}" stroke="${st}" stroke-width=".35"/>`};
+  for(const tx of[0,20]){s+=`<rect x="${tx-2.2}" y="${Y(67)}" width="4.4" height="67" fill="#e3f1f8" stroke="#2f6f9f" stroke-width=".3"/>`;
+    for(let L=0;L<=9;L++){const cy=5+5*L;if(L%2===0){for(const dx of[-10,10]){if(tx===20&&dx===-10)continue;s+=oct(tx+dx,cy,'#eef7fc','#4f86ad')}}else for(const dx of[-5,5])s+=oct(tx+dx,cy,'#f6eef3','#9a6b8f')}
+    for(let L=0;L<=9;L++)s+=`<line x1="${tx-2.2}" y1="${Y(5*L+3.5)}" x2="${tx+2.2}" y2="${Y(5*L+3.5)}" stroke="#2f6f9f" stroke-width=".15"/>`}
+  s+=`<line x1="-34" y1="0" x2="70" y2="0" stroke="#888" stroke-width=".25"/>`;
+  s+=`<line x1="0" y1="${Y(69)}" x2="-14" y2="${Y(69)}" stroke="#555" stroke-width=".2"/>`+T(-14.5,Y(68.4),'줄기 타워 (엘리베이터·계단·배관)',1.7,'#2f6f9f',700,'end');
+  s+=`<line x1="-10" y1="${Y(45)}" x2="-22" y2="${Y(50)}" stroke="#555" stroke-width=".2"/>`+T(-22.5,Y(51),'거품 집 1칸 = 1세대',1.6,'#333',700,'end')+T(-22.5,Y(48.4),'(켈빈 셀 · 폭 10m)',1.3,'#666',500,'end');
+  s+=`<line x1="10" y1="${Y(62)}" x2="10" y2="${Y(52)}" stroke="#c0392b" stroke-width=".2" stroke-dasharray="1 .8"/>`+T(10,Y(63),'빛 마당 (비운 칸)',1.4,'#c0392b',700);
+  s+=`<line x1="30" y1="${Y(25)}" x2="44" y2="${Y(30)}" stroke="#555" stroke-width=".2"/>`+T(44.5,Y(30.6),'거품끼리 면을 나눠 쓰며 맞물림',1.5,'#333',600,'start')+T(44.5,Y(28),'→ 아래 거품이 위 거품을 받침',1.3,'#666',500,'start');
+  s+=T(44.5,Y(12),'→ 줄기 타워를 20m마다 더 세우면',1.5,'#2f6f9f',700,'start')+T(44.5,Y(9.4),'   마을이 옆으로 계속 넓어짐',1.5,'#2f6f9f',700,'start');
+  s+=T(-33,Y(-5),'옆에서 본 단면 (보라 = 반 칸 어긋난 층의 거품)',1.3,'#666',500,'start');
+  document.getElementById('svgStruct').innerHTML=s+'</svg>'})();
+</script>
+
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {ConvexGeometry} from 'three/addons/geometries/ConvexGeometry.js';
+
+const box=document.getElementById('view3d'),capEl=document.getElementById('cap');
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;
+box.prepend(renderer.domElement);
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(42,1,.1,3000);
+const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.maxPolarAngle=Math.PI*.495;controls.minDistance=.5;controls.maxDistance=600;
+const hemi=new THREE.HemisphereLight(0xffffff,0x9aa08c,.95);scene.add(hemi);
+const sun=new THREE.DirectionalLight(0xffffff,2.4);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
+Object.assign(sun.shadow.camera,{left:-90,right:90,top:110,bottom:-40,near:1,far:400});sun.shadow.bias=-.0005;scene.add(sun);scene.add(sun.target);
+
+const D=d=>d*Math.PI/180;
+const std=(c,o={})=>new THREE.MeshStandardMaterial({color:c,roughness:.8,...o});
+function add(geo,mat,x=0,y=0,z=0,parent=scene,shadow=true){const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);if(shadow){m.castShadow=true;m.receiveShadow=true}parent.add(m);return m}
+const box3=(x1,x2,y1,y2,z1,z2,mat,parent)=>add(new THREE.BoxGeometry(x2-x1,y2-y1,z2-z1),mat,(x1+x2)/2,(y1+y2)/2,(z1+z2)/2,parent);
+const glassM=(c,o)=>new THREE.MeshPhysicalMaterial({color:c,transparent:true,opacity:o,roughness:.05,metalness:.05,side:THREE.DoubleSide,depthWrite:false});
+const M={ground:std(0xdfe4da),road:std(0x8c8e92),plaza:std(0xece6dc),white:std(0xf2f3f5,{roughness:.5}),frame:std(0xe9ecef,{metalness:.6,roughness:.3}),
+  floor:std(0xcfae86,{roughness:.6}),wood:std(0x9a6b43,{roughness:.6}),sofa:std(0x6f8291),bed:std(0xf2ede4),duvet:std(0xd9c7a8),plant:std(0x6aa34f),trunk:std(0x5b3a24),
+  dark:std(0x2a2d31),deck:std(0xbcc3ca,{metalness:.35,roughness:.55}),tower:glassM(0xd8eef8,.3),walk:glassM(0xe8f4fa,.25),
+  lamp:new THREE.MeshStandardMaterial({color:0xfff2d6,emissive:0xffd9a0,emissiveIntensity:.6})};
+const ETFE=[0xd3ebf7,0xdff1dc,0xf5e4ea,0xf3eedb].map(c=>{const m=glassM(c,.3);m.emissive=new THREE.Color(0xffc98a);m.emissiveIntensity=0;return m});
+
+/* ── 켈빈 셀(깎은 정팔면체): (0,±1,±2)의 모든 순열 × S ── */
+const S=2.5,MAXL=11,cy=L=>5+5*L,TH=cy(MAXL)+7;
+const TOV=[];for(const[i0,i1,i2]of[[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]])for(const a of[-1,1])for(const b of[-1,1]){const v=[0,0,0];v[i1]=a;v[i2]=2*b;TOV.push(new THREE.Vector3(v[0]*S,v[1]*S,v[2]*S))}
+const cellGeo=new ConvexGeometry(TOV);
+const EDGE_M=[];{const up=new THREE.Vector3(0,1,0);for(let i=0;i<24;i++)for(let j=i+1;j<24;j++){const a=TOV[i],b=TOV[j];
+  if(Math.abs(a.distanceTo(b)-Math.SQRT2*S)<1e-3){const d=b.clone().sub(a),L=d.length();EDGE_M.push(new THREE.Matrix4().compose(a.clone().add(b).multiplyScalar(.5),new THREE.Quaternion().setFromUnitVectors(up,d.normalize()),new THREE.Vector3(1,L,1)))}}}
+const edgeGeo=new THREE.CylinderGeometry(.08,.08,1,6);
+const floorGeo=(()=>{const sh=new THREE.Shape([[4.9,1],[1,4.9],[-1,4.9],[-4.9,1],[-4.9,-1],[-1,-4.9],[1,-4.9],[4.9,-1]].map(([x,y])=>new THREE.Vector2(x,y)));
+  const g=new THREE.ExtrudeGeometry(sh,{depth:.2,bevelEnabled:false});g.rotateX(-Math.PI/2);return g})();   // 바닥 높이(중심 -1.5m)의 단면 = 팔각형 약 68㎡
+
+/* ── 상태 ── */
+const cells=new Map(),trunks=[],labels=[];let anims=[],showLabels=true;
+const K=(L,x,z)=>L+'|'+x+'|'+z;
+const isTrunk=(x,z)=>trunks.some(t=>t.x===x&&t.z===z);
+const town=new THREE.Group();scene.add(town);
+function labelSprite(text,sub){const c=document.createElement('canvas');c.width=512;c.height=160;const x=c.getContext('2d');
+  x.fillStyle='rgba(255,255,255,.92)';x.beginPath();x.roundRect(6,6,500,148,30);x.fill();x.strokeStyle='#2f6f9f';x.lineWidth=5;x.stroke();
+  x.fillStyle='#2f6f9f';x.font='bold 64px "Malgun Gothic",sans-serif';x.textAlign='center';x.fillText(text,256,82);
+  x.fillStyle='#666';x.font='36px "Malgun Gothic",sans-serif';x.fillText(sub,256,130);
+  const tx=new THREE.CanvasTexture(c);tx.colorSpace=THREE.SRGBColorSpace;const s=new THREE.Sprite(new THREE.SpriteMaterial({map:tx,depthTest:false}));s.scale.set(7,2.2,1);return s}
+
+/* ── 줄기 타워: 사각 유리 타워(엘리베이터·계단·배관) ── */
+function buildTrunk(t){const g=new THREE.Group();g.position.set(t.x,0,t.z);town.add(g);t.g=g;
+  add(new THREE.CylinderGeometry(2.26,2.26,TH,4,1,true),M.tower,0,TH/2,0,g,false);
+  for(const[x,z]of[[2.26,0],[-2.26,0],[0,2.26],[0,-2.26]])box3(x-.14,x+.14,0,TH,z-.14,z+.14,M.white,g);
+  for(let L=0;L<=MAXL;L++)add(new THREE.CylinderGeometry(2.3,2.3,.18,4),M.white,0,cy(L)-1.6,0,g);
+  add(new THREE.CylinderGeometry(1.15,1.15,TH,4),std(0xe4e8ec,{roughness:.6}),-.35,TH/2,-.35,g);           // 계단·배관 코어
+  add(new THREE.CylinderGeometry(2.7,2.7,.8,4),M.white,0,TH+.4,0,g);
+  t.cab=box3(-.45,.45,0,2.3,.65,1.55,std(0xf7f2e6,{roughness:.4}),g);t.cab.position.x=.55;t.cab.position.z=.55;t.cy=Math.random()*TH;t.dir=1;
+  const s=labelSprite(`줄기 타워 ${trunks.indexOf(t)+1}`,'엘리베이터 · 계단 · 배관');s.position.set(0,TH+4,0);g.add(s);s.visible=showLabels;labels.push(s);return g}
+
+/* ── 거품 집 ── */
+function buildCell(c){const g=new THREE.Group();g.position.set(c.x,cy(c.L),c.z);town.add(g);c.g=g;
+  add(cellGeo,ETFE[(Math.abs(c.x/5+c.z/5+c.L))%4],0,0,0,g,false);
+  const im=new THREE.InstancedMesh(edgeGeo,M.frame,EDGE_M.length);EDGE_M.forEach((m,i)=>im.setMatrixAt(i,m));im.castShadow=true;g.add(im);
+  add(floorGeo,M.floor,0,-1.7,0,g);
+  const f=new THREE.Group();f.rotation.y=D(90*((c.x+c.z+c.L*3)/5&3));g.add(f);   // 집마다 가구 방향을 조금씩 다르게
+  box3(-3.6,-.2,1.2,1.35,-2.6,2.4,M.white,f);box3(-3.3,-1.3,1.35,1.75,-2.2,0,M.bed,f);box3(-3.3,-1.3,1.75,1.85,-1.6,0,M.duvet,f);   // 다락 침실
+  for(let k=0;k<6;k++)box3(-.2+k*.0,.6,-1.5+k*.45,-1.42+k*.45,1.6-k*.32,1.92-k*.32,M.wood,f);                                         // 다락 계단
+  box3(1.0,3.6,-1.5,-1.08,2.2,3.1,M.sofa,f);box3(1.0,3.6,-1.5,-.65,2.95,3.1,M.sofa,f);
+  add(new THREE.CylinderGeometry(.7,.7,.05,20),M.wood,1.8,-.75,-.4,f);add(new THREE.CylinderGeometry(.06,.06,.7,8),M.dark,1.8,-1.12,-.4,f);
+  box3(-4.6,-3.9,-1.5,-.6,-1.6,1.6,M.white,f);
+  add(new THREE.CylinderGeometry(.2,.16,.4,10),M.wood,3.4,-1.3,-2.6,f);add(new THREE.SphereGeometry(.45,10,8),M.plant,3.4,-.75,-2.6,f);
+  add(new THREE.CylinderGeometry(.4,.4,.04,16),M.lamp,1.8,1.6,-.4,f,false);
+  // 가장 가까운 줄기 타워로 지붕 덮인 브리지
+  let t=trunks[0],bd=1e9;for(const q of trunks){const d=Math.hypot(q.x-c.x,q.z-c.z);if(d<bd){bd=d;t=q}}
+  const dx=(t.x-c.x)/bd,dz=(t.z-c.z)/bd,s1=4.4,s2=bd-1.5,L=s2-s1,mid=(s1+s2)/2,a=Math.atan2(-dz,dx);
+  const br=add(new THREE.BoxGeometry(L,.2,1.8),M.deck,dx*mid,-1.6,dz*mid,g);br.rotation.y=a;
+  const cv=add(new THREE.BoxGeometry(L,2.4,2.0),M.walk,dx*mid,-.3,dz*mid,g,false);cv.rotation.y=a;
+  return g}
+
+/* ── 자라는 규칙 ── */
+const RING_E=[[10,0],[-10,0],[0,10],[0,-10]],RING_O=[[5,5],[5,-5],[-5,5],[-5,-5]];
+function supported(L,x,z){if(L===0)return true;
+  for(const[dx,dz]of RING_O){const nx=x+dx,nz=z+dz;if(cells.has(K(L-1,nx,nz))||((L-1)%2===0&&isTrunk(nx,nz)))return true}
+  return L>=2&&cells.has(K(L-2,x,z))}
+function candidates(){const out=new Map();
+  for(const t of trunks)for(let L=0;L<=MAXL;L++)for(const[dx,dz]of(L%2?RING_O:RING_E)){const x=t.x+dx,z=t.z+dz,k=K(L,x,z);
+    if(!cells.has(k)&&!out.has(k)&&!(L%2===0&&isTrunk(x,z))&&supported(L,x,z))out.set(k,{L,x,z})}
+  return[...out.values()]}
+function addCell(c,delay=null){cells.set(K(c.L,c.x,c.z),c);buildCell(c);if(delay!==null){c.g.visible=false;anims.push({kind:'drop',g:c.g,y:cy(c.L),t:-delay,dur:2,c})}}
+function growOne(delay=null){const cs=candidates();if(!cs.length)return false;let best=null,bs=1e9;
+  for(const o of cs){const sc=o.L+Math.random()*2.4;if(sc<bs){bs=sc;best=o}}addCell(best,delay);return true}
+function addTrunk(t,delay=null){trunks.push(t);buildTrunk(t);if(delay!==null){t.g.scale.y=.001;anims.push({kind:'rise',g:t.g,t:-delay,dur:3})}}
+function nextTrunk(){const opts=[];for(const t of trunks)for(const[dx,dz]of[[20,0],[-20,0],[0,20],[0,-20]]){const x=t.x+dx,z=t.z+dz;
+    if(!isTrunk(x,z)&&Math.hypot(x,z)<=90&&!opts.some(o=>o.x===x&&o.z===z))opts.push({x,z})}
+  if(!opts.length)return null;opts.sort((a,b)=>Math.hypot(a.x-10,a.z)-Math.hypot(b.x-10,b.z)+(Math.random()-.5)*20);return opts[0]}
+function count(){document.getElementById('count').textContent=`거품 집 ${cells.size}세대 · 줄기 타워 ${trunks.length}개`}
+function resetTown(){for(const c of town.children.slice())town.remove(c);cells.clear();trunks.length=0;labels.length=0;anims=[]}
+
+/* ── 땅·도시 ── */
+add(new THREE.PlaneGeometry(1200,1200).rotateX(-Math.PI/2),M.ground,0,-.01,0).castShadow=false;
+add(new THREE.PlaneGeometry(150,110).rotateX(-Math.PI/2),M.plaza,10,0,0);
+for(const z of[-62,62])box3(-300,300,0,.03,z-6,z+6,M.road);for(const x of[-70,90])box3(x-6,x+6,0,.03,-300,300,M.road);
+function tree(x,z,s=1){add(new THREE.CylinderGeometry(.15*s,.2*s,1.8*s,8),M.trunk,x,.9*s,z);add(new THREE.SphereGeometry(1.3*s,12,10),M.plant,x,2.6*s,z)}
+for(let i=0;i<26;i++){const a=Math.random()*Math.PI*2,r=42+Math.random()*10;tree(10+r*Math.cos(a)*1.2,r*Math.sin(a)*.95,1+Math.random()*.4)}
+{const wt=(()=>{const c=document.createElement('canvas');c.width=64;c.height=128;const g=c.getContext('2d');g.fillStyle='#d9dde2';g.fillRect(0,0,64,128);g.fillStyle='#9fb8c9';
+  for(let y=6;y<128;y+=16)for(let x=6;x<64;x+=16)g.fillRect(x,y,10,10);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;return t})();
+ for(const[x,z,w,d,h]of[[-110,-90,24,20,48],[-115,10,20,24,30],[-100,100,26,20,56],[130,-95,20,22,38],[140,20,24,20,62],[20,-110,30,18,40],[60,115,22,20,34],[-30,120,18,20,44]]){
+   const t=wt.clone();t.needsUpdate=true;t.repeat.set(w/8,h/8);add(new THREE.BoxGeometry(w,h,d),std(0xffffff,{map:t,roughness:.7}),x,h/2,z)}}
+const cable=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,1,6),std(0x222222));cable.visible=false;scene.add(cable);
+const hook=new THREE.Mesh(new THREE.BoxGeometry(1.2,.5,1.2),std(0xf2b134,{metalness:.3,roughness:.5}));hook.visible=false;scene.add(hook);
+
+/* ── 상태·버튼 ── */
+let time='day';
+function say(t){capEl.textContent=t;capEl.style.display=t?'block':'none'}
+function applyEnv(){
+  const sky={day:0xcfe6f3,dusk:0xf0c39a,night:0x0d1828}[time];scene.background=new THREE.Color(sky);scene.fog=new THREE.Fog(sky,220,700);
+  if(time==='day'){sun.position.set(80,140,90);sun.color.set(0xffffff);sun.intensity=2.4;hemi.intensity=.95}
+  if(time==='dusk'){sun.position.set(-120,40,80);sun.color.set(0xffb070);sun.intensity=1.8;hemi.intensity=.55}
+  if(time==='night'){sun.position.set(-50,130,80);sun.color.set(0x8fa8d8);sun.intensity=.25;hemi.intensity=.18}
+  sun.target.position.set(10,0,0);M.lamp.emissiveIntensity=time==='night'?2.4:.6;ETFE.forEach(m=>m.emissiveIntensity=time==='night'?.32:time==='dusk'?.08:0)}
+document.querySelectorAll('[data-time]').forEach(b=>b.onclick=()=>{time=b.dataset.time;document.querySelectorAll('[data-time]').forEach(x=>x.classList.toggle('on',x===b));applyEnv()});
+document.getElementById('labelBtn').onclick=e=>{showLabels=!showLabels;e.target.classList.toggle('on',showLabels);labels.forEach(s=>s.visible=showLabels)};
+const pending=()=>anims.reduce((m,a)=>Math.max(m,-a.t),0);
+document.getElementById('grow1').onclick=()=>{if(!growOne(pending()+.1))say('붙일 자리가 없어요 · 줄기 타워 +로 마을을 넓혀 주세요');count()};
+document.getElementById('grow10').onclick=()=>{let d=pending()+.1,n=0;for(let i=0;i<10;i++){if(!growOne(d))break;d+=.7;n++}if(!n)say('붙일 자리가 없어요 · 줄기 타워 +로 마을을 넓혀 주세요');count()};
+document.getElementById('trunkPlus').onclick=()=>{const t=nextTrunk();if(!t){say('마을 경계에 닿았어요');return}addTrunk(t,pending()+.1);let d=pending()+.2;for(let i=0;i<4;i++){growOne(d);d+=.7}count()};
+document.getElementById('replay').onclick=()=>{resetTown();addTrunk({x:0,z:0},0);let d=3.2;for(let i=0;i<14;i++){growOne(d);d+=.6}addTrunk({x:20,z:0},d);d+=3.2;for(let i=0;i<14;i++){growOne(d);d+=.6}count();setView('home')};
+const fly={q:[],t:0,from:null};
+const views={home:()=>[[70,48,78],[8,22,6]],top:()=>[[10,170,.1],[10,0,0]],street:()=>[[22,1.7,44],[10,14,0]],
+  inside:()=>{let c=[...cells.values()].find(c=>c.L===2)||[...cells.values()][0];if(!c)return views.home();const p=c.g.position;return[[p.x+2.6,p.y-.2,p.z+2.2],[p.x-3,p.y-.6,p.z-1.5]]}};
+function setView(k){fly.q=[];const[p,t]=views[k]();camera.position.set(...p);controls.target.set(...t)}
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view));
+function resize(){const w=box.clientWidth,h=box.clientHeight;if(!w||!h)return;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix()}
+new ResizeObserver(resize).observe(box);window.addEventListener('resize',resize);resize();
+
+// 처음: 줄기 3개 + 거품 집 60채(바로 완성)
+addTrunk({x:0,z:0});addTrunk({x:20,z:0});addTrunk({x:0,z:20});for(let i=0;i<60;i++)growOne();count();applyEnv();setView('home');
+
+/* 우클릭: 그 위치로 부드럽게 확대 이동(막은 통과해 안쪽을 짚고, 너머가 멀면 막 자체로) */
+let downXY=null;const pickRay=new THREE.Raycaster(),ptr=new THREE.Vector2();pickRay.camera=camera;
+function flyTo(list){fly.q=list.map(([p,t,d])=>({p:new THREE.Vector3(...p),t:new THREE.Vector3(...t),d:d||1.2}));fly.t=0;fly.from=null}
+renderer.domElement.addEventListener('pointerdown',e=>{downXY=[e.clientX,e.clientY];fly.q=[]});
+renderer.domElement.addEventListener('contextmenu',e=>e.preventDefault());
+renderer.domElement.addEventListener('pointerup',e=>{
+  if(e.button!==2||!downXY||Math.hypot(e.clientX-downXY[0],e.clientY-downXY[1])>5)return;
+  const r=renderer.domElement.getBoundingClientRect();ptr.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);pickRay.setFromCamera(ptr,camera);
+  let glass=null,hit=null;
+  for(const h of pickRay.intersectObjects(scene.children,true)){const o=h.object;let a=o,hid=false;while(a){if(!a.visible){hid=true;break}a=a.parent}
+    if(hid||o.isSprite)continue;if(o.material&&o.material.transparent){if(!glass)glass=h;continue}hit=h;break}
+  if(glass&&(!hit||hit.distance-glass.distance>12))hit=glass;
+  if(!hit)return;const dir=camera.position.clone().sub(hit.point);dir.setLength(Math.min(dir.length(),4));flyTo([[hit.point.clone().add(dir).toArray(),hit.point.toArray(),1.1]])});
+
+const clock=new THREE.Clock();
+function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);
+  let active=null;
+  for(const a of anims){a.t+=dt;const k=Math.min(1,Math.max(0,a.t/a.dur)),e=1-Math.pow(1-k,3);
+    if(a.kind==='drop'){a.g.visible=a.t>0;a.g.position.y=a.y+16*(1-e);if(a.t>0&&k<1)active=a}
+    else{a.g.scale.y=Math.max(.001,e);if(a.t>0&&k<1&&!active)active=a}}
+  if(anims.length&&anims.every(a=>a.t>=a.dur)){anims=[];say(`완성 · 거품 집 ${cells.size}세대 · 줄기 타워 ${trunks.length}개`);setTimeout(()=>{if(!anims.length)say('')},2500)}
+  cable.visible=hook.visible=!!(active&&active.kind==='drop');
+  if(active){if(active.kind==='drop'){const p=active.g.position,top=150,by=p.y+5.6;cable.position.set(p.x,(top+by)/2,p.z);cable.scale.y=top-by;hook.position.set(p.x,by+.25,p.z);
+      say(`크레인이 거품 집을 ${Math.round(active.y)}m 높이 자리에 내려 끼우는 중 · 아래 거품·줄기가 받쳐 줘요`)}
+    else say('줄기 타워(엘리베이터·계단·배관)를 세우는 중 · 둘레에 새 거품 자리가 생겨요')}
+  for(const t of trunks){t.cy+=t.dir*dt*3;if(t.cy>TH-4){t.cy=TH-4;t.dir=-1}if(t.cy<0){t.cy=0;t.dir=1}t.cab.position.y=t.cy+1.15}
+  if(fly.q.length){const k=fly.q[0];if(!fly.from)fly.from={p:camera.position.clone(),t:controls.target.clone()};
+    fly.t+=dt/k.d;const e=Math.min(1,fly.t),sm=e*e*(3-2*e);camera.position.lerpVectors(fly.from.p,k.p,sm);controls.target.lerpVectors(fly.from.t,k.t,sm);
+    if(e>=1){fly.q.shift();fly.from=null;fly.t=0}}
+  controls.update();renderer.render(scene,camera)}
+animate();
+window.__bvDbg={cells,trunks,camera,controls,candidates};
+</script>
+</body>
+</html>
