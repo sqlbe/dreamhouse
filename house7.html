@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>회오리 마을</title>
+<style>
+:root{--bg:#f6f8fa;--ink:#22303c;--sub:#6b7785;--line:#dbe2e8;--acc:#2f6f9f}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif}
+body{display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 16px;background:#fff;border-bottom:1px solid var(--line)}
+h1{font-size:18px;margin:0}.sub{color:var(--sub);font-size:12px}
+button{font:inherit;font-size:12px;padding:6px 10px;border:1px solid var(--line);background:#fff;border-radius:8px;color:var(--ink);cursor:pointer}
+button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+main{flex:1;min-height:0;position:relative;overflow:hidden}main canvas{display:block}
+.ctl{position:absolute;left:12px;bottom:12px;background:rgba(255,255,255,.95);border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:6px;max-width:calc(100% - 24px)}
+.row{display:flex;gap:5px;align-items:center;flex-wrap:wrap}.lbl{font-size:11px;color:var(--sub);width:60px}.num{font-weight:700;font-size:12px;color:var(--acc);min-width:22px;text-align:center}
+.hint{position:absolute;right:12px;top:12px;background:rgba(255,255,255,.92);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:11px;color:var(--sub);max-width:300px;line-height:1.6}
+body.ui-off .ctl,body.ui-off .hint{display:none}
+@media(max-width:768px){.sub{display:none}.ctl{left:8px;right:8px;bottom:8px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>회오리 마을</h1>
+  <span class="sub">둥근 플랫폼 · 단마다 비틀림(스크류) · 위로 갈수록 좁아짐 · 원형 배치 + 나선 계단 데크 · 프로토타입 1차</span>
+  <button id="uiToggle">☰ 메뉴</button>
+</header>
+<main id="view">
+  <div class="hint"><b>스크류</b>: 단마다 상자 배치가 같은 방향으로 돌아감<br><b>위로 좁게</b>: 아래 단이 가장 넓고(상자 8개) 위로 갈수록 작아짐(3개) — 줄기 코어 + 안쪽 기둥 링 8개가 위 단 무게를 아래로 받쳐 안정적<br><b>회오리 데크</b>: 같은 단끼리는 평평한 정원 데크, 옆 빌딩 한 단 위로는 나선 계단 데크 → 마을 전체를 감고 올라감</div>
+  <div class="ctl">
+    <div class="row"><span class="lbl">빌딩 수</span><button id="nMinus">−</button><span class="num" id="nNum"></span><button id="nPlus">+</button><span class="lbl" style="width:auto;margin-left:8px">단 수</span><button id="tMinus">−</button><span class="num" id="tNum"></span><button id="tPlus">+</button></div>
+    <div class="row"><span class="lbl">비틀림</span><button data-tw="0">0°</button><button data-tw="15" class="on">15°</button><button data-tw="30">30°</button></div>
+    <div class="row"><span class="lbl">모양</span><button id="tornado" class="on">위로 좁게</button><button id="spiral" class="on">나선 계단 데크</button></div>
+    <div class="row"><span class="lbl">시간</span><button data-time="day" class="on">낮</button><button data-time="night">밤</button></div>
+    <div class="row"><span class="lbl">현재</span><span class="num" id="count" style="text-align:left"></span></div>
+  </div>
+</main>
+<script>
+const uiBtn=document.getElementById('uiToggle');
+function setUI(on){document.body.classList.toggle('ui-off',!on);uiBtn.classList.toggle('on',on);uiBtn.textContent=on?'☰ 메뉴 숨기기':'☰ 메뉴 보기'}
+setUI(!(matchMedia('(max-width: 768px)').matches||matchMedia('(pointer: coarse)').matches));uiBtn.onclick=()=>setUI(document.body.classList.contains('ui-off'));
+</script>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+const view=document.getElementById('view');
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;
+renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;view.prepend(renderer.domElement);
+const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(42,1,.1,3000);
+const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.maxPolarAngle=Math.PI*.495;
+const hemi=new THREE.HemisphereLight(0xffffff,0x9aa08c,.95);scene.add(hemi);
+const sun=new THREE.DirectionalLight(0xffffff,2.4);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-120,right:120,top:140,bottom:-60,near:1,far:500});scene.add(sun,sun.target);
+const D=d=>d*Math.PI/180,std=(c,o={})=>new THREE.MeshStandardMaterial({color:c,roughness:.8,...o});
+function add(geo,mat,x,y,z,p=scene,sh=true){const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);if(sh){m.castShadow=m.receiveShadow=true}p.add(m);return m}
+const box3=(x1,x2,y1,y2,z1,z2,mat,p)=>add(new THREE.BoxGeometry(x2-x1,y2-y1,z2-z1),mat,(x1+x2)/2,(y1+y2)/2,(z1+z2)/2,p);
+const glass=new THREE.MeshPhysicalMaterial({color:0xcfeaf7,transparent:true,opacity:.3,roughness:.05,side:THREE.DoubleSide,depthWrite:false});
+const M={ground:std(0xdfe4da),plaza:std(0xece6dc),core:std(0xf2f3f5,{roughness:.5}),steel:std(0x55606b,{metalness:.5,roughness:.4}),deck:std(0xcfc8bb),
+  hanger:std(0xc0392b,{metalness:.4,roughness:.4}),lawn:std(0x86b35f),plant:std(0x6aa34f),plant2:std(0x8fbf5a),trunk:std(0x5b3a24),step:std(0xd9d2c4),
+  win:new THREE.MeshStandardMaterial({color:0x9fc4dc,roughness:.15,metalness:.3,emissive:0xffcf8a,emissiveIntensity:0})};
+const SKIN=[0xc9a27a,0xf1ede6,0xb98b62,0xe6dccd].map(c=>std(c,{roughness:.7}));
+
+/* 치수: 줄기 반지름 3m · 단 높이 15.2m(플랫폼 0.8 + 상자 3층 + 정원 층) · 상자 12×3.6×3.3m를 둥근 판 둘레에 접선 방향으로
+   토네이도: 단 t의 판 반지름 12 + 2t(m) → 상자 수는 판에 들어가는 만큼(3~8개) */
+const FH=3.6,TP=15.2,BASE=4,tierY=t=>BASE+t*TP;
+let NB=5,NT=6,TW=15,TOR=true,SPI=true;
+const town=new THREE.Group();scene.add(town);
+const radius=t=>TOR?12+2*(NT-1-t):14;   // 위로 갈수록 좁게(아래 단이 가장 넓음)
+function ring(R){const rr=Math.sqrt((R-.5)**2-36)-1.8,inner=rr-1.8,n=Math.max(3,Math.floor(Math.PI/Math.atan(6.6/inner)));return{rr,n}}
+function buildTower(x,z,bi){const g=new THREE.Group();g.position.set(x,0,z);town.add(g);let nbox=0;const top=tierY(NT)+1.5,Rt=radius(NT-1);
+  add(new THREE.CylinderGeometry(3,3.3,top,32),M.core,0,top/2,0,g);                                              // 줄기 코어
+  for(let k=0;k<8;k++){const a=D(45*k+22.5);add(new THREE.CylinderGeometry(.28,.32,top,10),M.steel,4.8*Math.cos(a),top/2,-4.8*Math.sin(a),g)}   // 안쪽 기둥 링: 위 단 무게를 아래로 받침
+  add(new THREE.CylinderGeometry(6,6,.5,32),M.steel,0,top+.25,0,g);add(new THREE.CylinderGeometry(5.8,5.8,.3,32),M.lawn,0,top+.6,0,g);add(new THREE.SphereGeometry(2.2,12,10),M.plant,0,top+2.6,0,g);
+  add(new THREE.CylinderGeometry(radius(0)+4,radius(0)+4,.06,48),M.plaza,0,.03,0,g);
+  for(let t=0;t<NT;t++){const R=radius(t),y=tierY(t),tg=new THREE.Group();tg.position.y=y;tg.rotation.y=D(TW*t+bi*20);g.add(tg);
+    add(new THREE.CylinderGeometry(R,R,.8,48),M.steel,0,.4,0,tg);add(new THREE.CylinderGeometry(R-.1,R-.1,.05,48),M.deck,0,.82,0,tg);   // 둥근 플랫폼
+    add(new THREE.CylinderGeometry(R-.05,R-.05,1.1,48,1,true),glass,0,1.4,0,tg,false);
+    const{rr,n}=ring(R);
+    for(let f=0;f<3;f++)for(let k=0;k<n;k++){const b=new THREE.Group();b.rotation.y=D(360*k/n);b.position.y=.85+f*FH;tg.add(b);nbox++;
+      box3(-6,6,.12,3.4,rr-1.8,rr+1.8,SKIN[(t+f+k+bi)%SKIN.length],b);box3(-4.5,4.5,1.1,2.6,rr+1.8,rr+1.84,M.win,b);
+      if(f===2){box3(-5.8,5.8,3.4,3.6,rr-1.6,rr+1.6,M.lawn,b);for(const x of[-3.5,0,3.5])add(new THREE.SphereGeometry(.6+.25*((k+x)%2?1:0),10,8),x?M.plant:M.plant2,x,4.1,rr,b)}}
+  }
+  return nbox}
+function deckFlat(A,B,t){const dx=B.x-A.x,dz=B.z-A.z,Dd=Math.hypot(dx,dz),R=radius(t),s=R-.3,e=Dd-s,L=e-s;if(L<2)return;
+  const g=new THREE.Group();g.position.set(A.x,tierY(t),A.z);g.rotation.y=Math.atan2(-dz,dx);town.add(g);
+  box3(s,e,0,.8,-4,4,M.steel,g);box3(s,e,.8,.85,-3.9,3.9,M.deck,g);
+  for(const z of[-2.6,2.6]){box3(s+1,e-1,.85,1.0,z-.8,z+.8,M.lawn,g);for(const x of[Dd/2-Math.min(5,L/2-2),Dd/2+Math.min(5,L/2-2)]){add(new THREE.CylinderGeometry(.12,.16,1.2,8),M.trunk,x,1.6,z,g);add(new THREE.SphereGeometry(1,10,8),M.plant2,x,2.7,z,g)}}
+  for(const z of[-4,4])box3(s,e,.85,1.95,z-.03,z+.03,glass,g).castShadow=false}
+function deckStair(A,B,t){const dx=B.x-A.x,dz=B.z-A.z,Dd=Math.hypot(dx,dz),o=7,sA=Math.sqrt(radius(t)**2-o*o)-.3,sB=Math.sqrt(radius(t+1)**2-o*o)-.3,L=Dd-sA-sB,H=TP;
+  const g=new THREE.Group();g.position.set(A.x,tierY(t)+.85,A.z);g.rotation.y=Math.atan2(-dz,dx);town.add(g);
+  const n=Math.ceil(H/.18),tr=L/n,ang=Math.atan2(H,L),len=Math.hypot(L,H);
+  for(let k=0;k<n;k++)box3(sA+k*tr,sA+(k+1)*tr+.02,(k+1)*H/n-.12,(k+1)*H/n,o-1.7,o+1.7,M.step,g);
+  for(const z of[o-1.8,o+1.8]){const st=add(new THREE.BoxGeometry(len,.5,.15),M.steel,sA+L/2,H/2-.3,z,g);st.rotation.z=ang;
+    const hr=add(new THREE.BoxGeometry(len,.06,.06),M.hanger,sA+L/2,H/2+.9,z,g);hr.rotation.z=ang}
+  for(const f of[.3,.7]){add(new THREE.SphereGeometry(.6,8,6),M.plant,sA+L*f,H*f+.4,o+1.4,g)}}
+let towers=[];
+function build(){town.clear();const Rmax=radius(0),chord=2*Rmax+16,RR=Math.max(chord/(2*Math.sin(Math.PI/NB)),Rmax+20);let nbox=0;
+  towers=[];for(let i=0;i<NB;i++){const a=D(360*i/NB),x=RR*Math.cos(a),z=RR*Math.sin(a);towers.push({x,z});nbox+=buildTower(x,z,i)}
+  add(new THREE.CylinderGeometry(RR-radius(0)-6,RR-radius(0)-6,.08,64),M.lawn,0,.04,0,town);                       // 가운데 공원
+  for(let i=0;i<NB;i++){const A=towers[i],B=towers[(i+1)%NB];for(let t=0;t<NT;t++)deckFlat(A,B,t);if(SPI)for(let t=0;t<NT-1;t++)deckStair(A,B,t)}
+  document.getElementById('nNum').textContent=NB;document.getElementById('tNum').textContent=NT;
+  document.getElementById('count').textContent=`빌딩 ${NB}동 · 상자 집 ${nbox}채 · 가지 단 ${NT}개`;
+  const d=RR*2.1+tierY(NT);camera.position.set(d*.55,d*.55,d*.85);controls.target.set(0,tierY(NT)/2,0)}
+const btn=(id,f)=>document.getElementById(id).onclick=f;
+btn('nMinus',()=>{if(NB>3){NB--;build()}});btn('nPlus',()=>{if(NB<8){NB++;build()}});
+btn('tMinus',()=>{if(NT>2){NT--;build()}});btn('tPlus',()=>{if(NT<8){NT++;build()}});
+btn('tornado',e=>{TOR=!TOR;e.target.classList.toggle('on',TOR);build()});btn('spiral',e=>{SPI=!SPI;e.target.classList.toggle('on',SPI);build()});
+document.querySelectorAll('[data-tw]').forEach(b=>b.onclick=()=>{TW=+b.dataset.tw;document.querySelectorAll('[data-tw]').forEach(x=>x.classList.toggle('on',x===b));build()});
+let time='day';function applyEnv(){const n=time==='night',sky=n?0x0d1828:0xcfe6f3;scene.background=new THREE.Color(sky);scene.fog=new THREE.Fog(sky,350,900);
+  sun.position.set(-80,160,120);sun.intensity=n?.25:2.4;hemi.intensity=n?.2:.95;M.win.emissiveIntensity=n?1.5:0}
+document.querySelectorAll('[data-time]').forEach(b=>b.onclick=()=>{time=b.dataset.time;document.querySelectorAll('[data-time]').forEach(x=>x.classList.toggle('on',x===b));applyEnv()});
+add(new THREE.PlaneGeometry(2000,2000).rotateX(-Math.PI/2),M.ground,0,-.01,0).castShadow=false;
+function resize(){const w=view.clientWidth,h=view.clientHeight;if(!w||!h)return;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix()}
+new ResizeObserver(resize).observe(view);resize();build();applyEnv();
+(function loop(){requestAnimationFrame(loop);controls.update();renderer.render(scene,camera)})();
+</script>
+</body>
+</html>
