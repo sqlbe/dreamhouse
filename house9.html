@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>강 위 다리 마을</title>
+<style>
+:root{--bg:#f6f8fa;--ink:#22303c;--sub:#6b7785;--line:#dbe2e8;--acc:#2f6f9f}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif}
+body{display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 16px;background:#fff;border-bottom:1px solid var(--line)}
+h1{font-size:18px;margin:0}.sub{color:var(--sub);font-size:12px}
+button,select{font:inherit;font-size:12px;padding:6px 10px;border:1px solid var(--line);background:#fff;border-radius:8px;color:var(--ink);cursor:pointer}
+button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+main{flex:1;min-height:0;position:relative;overflow:hidden}main canvas{display:block}
+.ctl{position:absolute;left:12px;bottom:12px;background:rgba(255,255,255,.95);border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:6px;max-width:calc(100% - 24px)}
+.row{display:flex;gap:5px;align-items:center;flex-wrap:wrap}.lbl{font-size:11px;color:var(--sub);width:58px}.num{font-weight:700;font-size:12px;color:var(--acc)}
+.hint{position:absolute;right:12px;top:12px;background:rgba(255,255,255,.92);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:11px;color:var(--sub);max-width:300px;line-height:1.6}
+.cap{position:absolute;left:50%;top:14px;transform:translateX(-50%);background:rgba(34,48,60,.86);color:#fff;padding:7px 14px;border-radius:20px;font-size:13px;max-width:80%;text-align:center}
+body.ui-off .ctl,body.ui-off .hint{display:none}
+@media(max-width:768px){.sub{display:none}.ctl{left:8px;right:8px;bottom:8px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>강 위 다리 마을</h1>
+  <span class="sub">세 가지 다리 비교: 교각+트러스 · 아치 계단 마을 · 아치 도로형 · 폭 100m 강 · 교각 3개 + 깊은 상자형 트러스 위 동네(가운데 공원길 + 양쪽 집) · 집의 안정성 우선 · 프로토타입 1차</span>
+  <button id="uiToggle">☰ 메뉴</button>
+</header>
+<main id="view">
+  <div class="hint"><b>우클릭</b>: 그 지점으로 날아가 확대(우클릭 드래그는 화면 이동)<br><b>집이 먼저</b>: 다리 아래층은 도로 대신 <b>깊은 상자형 트러스</b>(높이 6m · 10m마다 가로 X 브레이싱)로 비우고 점검·설비 통로만 둠<br><b>하중 길</b>: 집 → 위 판 → 상자형 트러스 → 교각 머리보·면진 받침 → <b>유선형 교각 3개</b>(경간 25m) → 강바닥 말뚝<br><b>아치 계단 마을</b>: 돌 아치 + 보조 교각 2개(가운데 54m는 배 길로 비움)<br><b>오르는 길</b>: 양 끝 계단식 테라스 광장(4.5m씩 4단, 넓은 계단) + 유리 엘리베이터 탑 · 교각 옆 유리 코어 = 선착장 ~ 다리 위 · 집 묶음 사이 틈과 바닥 유리창으로 강에 빛</div>
+  <div class="cap" id="cap"></div>
+  <div class="ctl">
+    <div class="row"><span class="lbl">홍수 수위</span><input id="flood" type="range" min="0" max="10" step="0.1" value="0" style="width:140px"><span class="num" id="floodLbl"></span></div>
+    <div class="row"><span class="lbl">조립</span><button id="asmBtn">전체 조립 보기</button></div>
+    <div class="row"><span class="lbl">움직임</span><button id="moveBtn" class="on">배·차 움직이기</button></div>
+    <div class="row"><span class="lbl">시점</span><button data-view="home">전체</button><button data-view="bank">강변에서</button><button data-view="entry">다리 입구</button><button data-view="deck">다리 위 산책로</button><button data-view="top">위에서</button><button data-view="twin">쌍둥이 다리</button><button data-view="all">세 다리 한눈에</button><button data-view="archC">아치 도로형</button><button data-view="archA">아치 계단 마을</button></div>
+    <div class="row"><span class="lbl">시간</span><button data-time="day" class="on">낮</button><button data-time="night">밤</button></div>
+  </div>
+</main>
+<script>
+const uiBtn=document.getElementById('uiToggle');
+function setUI(on){document.body.classList.toggle('ui-off',!on);uiBtn.classList.toggle('on',on);uiBtn.textContent=on?'☰ 메뉴 숨기기':'☰ 메뉴 보기'}
+setUI(!(matchMedia('(max-width: 768px)').matches||matchMedia('(pointer: coarse)').matches));uiBtn.onclick=()=>setUI(document.body.classList.contains('ui-off'));
+</script>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+const view=document.getElementById('view'),capEl=document.getElementById('cap');
+const renderer=new THREE.WebGLRenderer({antialias:true,logarithmicDepthBuffer:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;
+renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;view.prepend(renderer.domElement);
+const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(42,1,.5,3000);
+const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.maxPolarAngle=Math.PI*.495;
+const hemi=new THREE.HemisphereLight(0xffffff,0x9aa08c,.95);scene.add(hemi);
+const sun=new THREE.DirectionalLight(0xffffff,2.4);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.bias=-.0006;sun.shadow.normalBias=.04;
+Object.assign(sun.shadow.camera,{left:-160,right:160,top:160,bottom:-160,near:10,far:800});scene.add(sun,sun.target);
+const std=(c,o={})=>new THREE.MeshStandardMaterial({color:c,roughness:.8,...o});
+function add(geo,mat,x,y,z,p=scene,sh=true){const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);if(sh){m.castShadow=m.receiveShadow=true}p.add(m);return m}
+const box3=(x1,x2,y1,y2,z1,z2,mat,p)=>add(new THREE.BoxGeometry(x2-x1,y2-y1,z2-z1),mat,(x1+x2)/2,(y1+y2)/2,(z1+z2)/2,p);
+const glass=new THREE.MeshPhysicalMaterial({color:0xcfeaf7,transparent:true,opacity:.3,roughness:.05,side:THREE.DoubleSide,depthWrite:false});
+const M={ground:std(0xdfe4da),bank:std(0xbfb8aa),levee:std(0x9fb88a),road:std(0x6f7377),bike:std(0x7aa36b),steel:std(0x5a6672,{metalness:.5,roughness:.4}),white:std(0xf2f3f5,{roughness:.5}),
+  pier:std(0xd9d4ca,{roughness:.7}),deck:std(0xd6cfc2),lawn:std(0x86b35f),plant:std(0x6aa34f),plant2:std(0x8fbf5a),trunk:std(0x5b3a24),wood:std(0x9a6b43,{roughness:.6}),
+  water:new THREE.MeshStandardMaterial({color:0x5f9bbf,roughness:.15,metalness:.2,transparent:true,opacity:.9}),
+  win:new THREE.MeshStandardMaterial({color:0x9fc4dc,roughness:.15,metalness:.3,emissive:0xffcf8a,emissiveIntensity:0}),lamp:new THREE.MeshStandardMaterial({color:0xfff2d6,emissive:0xffd9a0,emissiveIntensity:.3})};
+const SKIN=[0xc9a27a,0xf1ede6,0xb98b62,0xe6dccd].map(c=>std(c,{roughness:.7}));
+function tree(x,y,z,s=1,p=scene){add(new THREE.CylinderGeometry(.14*s,.2*s,1.8*s,8),M.trunk,x,y+.9*s,z,p);add(new THREE.SphereGeometry(1.3*s,10,8),(x+z)%2?M.plant:M.plant2,x,y+2.6*s,z,p)}
+
+/* 치수: 강 폭 100m(x −50~50, 남북으로 흐름) · 둑 위 +3m · 평소 물 −4m · 다리 길이 160m(교각 x=±25 · 강변 받침 x=±55)
+   아래층 바닥 11~12m(도로) · 위층 바닥 17.4~18m(동네) · 다리 폭 36m(z −18~18) */
+const W=50,LOW=12,UP=18,DW=18,BL=80;
+/* 전체 조립 보기: 단계마다 새로 만들어진 물체를 기록 */
+const STEPS=[];let capS=0,capB=0,bridgeRef=null;
+function capStart(){capS=scene.children.length;capB=0}
+function cap(label,kind,each){const objs=[...scene.children.slice(capS).filter(o=>o!==bridgeRef)];capS=scene.children.length;
+  if(bridgeRef){objs.push(...bridgeRef.children.slice(capB));capB=bridgeRef.children.length}if(objs.length)STEPS.push({label,kind,each,objs})}
+// 땅 · 둑 · 강
+for(const sx of[-1,1])add(new THREE.PlaneGeometry(1000,2000).rotateX(-Math.PI/2),M.ground,sx*(W+500),-.01,0).castShadow=false;   // 강 자리는 비움
+box3(-W,W,-8,-6,-600,600,M.bank);                                                                               // 강바닥
+for(const sx of[-1,1]){box3(sx>0?W:-W-14,sx>0?W+14:-W,-8,3,-600,600,M.bank);box3(sx>0?W+14:-W-30,sx>0?W+30:-W-14,0,3,-600,600,M.levee);   // 둑(높이 3m) · 둑 위 공원
+  box3(sx>0?W+1:-W-3,sx>0?W+3:-W-1,3,3.06,-600,600,M.deck);for(let z=-280;z<=280;z+=22)tree(sx*(W+22),3,z,1.1)}   // 강변 산책로 · 둑 나무
+const water=add(new THREE.BoxGeometry(2*W,1,1200),M.water,0,-4.5,0);water.castShadow=false;
+for(const z of[-140,140])for(const sx of[-1,1])for(let k=0;k<4;k++){const h=24+((k*7+z)%3)*10;box3(sx*(W+40+k*30),sx*(W+40+k*30)+sx*22,0,h,z-14,z+14,std(0xe6e8ea),scene)}   // 강변 도시 블록
+capStart();
+// 교각(유선형) · 교각 속 유리 코어
+for(const x of[-25,0,25]){const p=add(new THREE.CylinderGeometry(1,1,LOW-2+8,32),M.pier,x,(LOW-2-8)/2,0);p.scale.set(3.4,1,15);   // 유선형 교각(강바닥 말뚝 기초 위)
+  box3(x-4.5,x+4.5,LOW-3.2,LOW-2,-DW-.5,DW+.5,M.pier);for(const z of[-14,-7,0,7,14])box3(x-1.2,x+1.2,LOW-2,LOW-1.4,z-1.2,z+1.2,std(0x2e2e2e));   // 교각 머리보 · 면진 받침
+  if(x===0)continue;
+  const cz=DW+3.6,h0=-6,h1=UP+4;                                                                              // 교각 옆 유리 코어(선착장 ~ 아래층 ~ 위층)
+  add(new THREE.CylinderGeometry(3.2,3.2,h1-h0,24,1,true),glass,x,(h1+h0)/2,cz,scene,false);for(let k=0;k<6;k++){const a=k*Math.PI/3;box3(x+3.1*Math.cos(a)-.12,x+3.1*Math.cos(a)+.12,h0,h1,cz+3.1*Math.sin(a)-.12,cz+3.1*Math.sin(a)+.12,M.white)}
+  add(new THREE.CylinderGeometry(3.6,3.6,.4,24),M.white,x,h1+.2,cz);add(new THREE.CylinderGeometry(3.4,3.4,.2,24),M.lawn,x,h1+.5,cz);tree(x,h1+.5,cz,1.1);
+  box3(x-6,x+6,-4.3,-3.7,cz+3,cz+9,M.wood);                                                                    // 수상 선착장
+  for(const y of[LOW,UP])box3(x-1.4,x+1.4,y-.3,y,DW,cz-3,M.white)}                                              // 코어 ↔ 아래층·위층 연결 통로
+cap('① 교각+트러스 다리: 강바닥 말뚝 위에 교각과 유리 코어를 세우는 중','rise',false);
+// 강변 받침(양 끝) : 다리를 둑에 앉힘 · 계단식 테라스 건물
+/* 양 끝: 다리 받침 + 계단식 테라스 광장(땅 → 다리 위) · 넓은 계단 · 유리 엘리베이터 탑 */
+const lifts=[];const stepM=std(0xe2dccf),shopM=std(0xeeeae2);
+for(const sx of[-1,1]){box3(sx>0?W+2:-BL,sx>0?BL:-W-2,0,LOW-1,-DW,DW,M.pier);
+  const X=d=>sx*(BL+d),span=(a,b)=>[Math.min(X(a),X(b)),Math.max(X(a),X(b))];
+  for(let k=0;k<4;k++){const top=UP-k*4.5,d0=k*10,d1=d0+10;                                                     // 다리 쪽이 가장 높고 바깥으로 4.5m씩 내려가는 테라스 4단
+    box3(...span(d0,d1),0,top,-DW,DW,shopM);box3(...span(d0,d1),top,top+.15,-DW,DW,M.lawn);
+    for(const z of[-12,12])tree(X(d0+5),top+.15,z,.9);
+    for(const z of[-DW,DW])box3(...span(d0+.5,d1-.5),top-3.6,top-1.2,z-.05,z+.05,M.win);                       // 테라스 아래층 가게 창
+    box3(...span(d1-.05,d1+.05),Math.max(0,top-4.5)+.6,top-1.2,-DW+1,-6,M.win);box3(...span(d1-.05,d1+.05),Math.max(0,top-4.5)+.6,top-1.2,6,DW-1,M.win)}   // 바깥쪽 가게 창
+  for(let k=0;k<4;k++){const yT=UP-k*4.5,yB=yT-4.5,d0=k*10+10;                                                  // 넓은 계단(폭 10m): 테라스 사이를 한 단씩 내려감
+    for(let q=0;q<24;q++){const y=yT-(q+1)*4.5/24,d=d0+q*(10/24);box3(...span(d,d+10/24+.02),Math.max(0,y-.4),y+.01,-5,5,stepM)}
+    for(const z of[-5,5])box3(...span(d0,d0+10),yB,yT+1.1,z-.05,z+.05,glass)}
+  box3(...span(50,64),0,.06,-12,12,M.deck);for(const z of[-8,8])tree(X(58),0,z,1);                              // 땅의 입구 광장
+  const ex=X(4),ez=-(DW+4);                                                                                      // 유리 엘리베이터 탑(휠체어·유모차)
+  add(new THREE.CylinderGeometry(3.4,3.4,UP+3,24,1,true),glass,ex,(UP+3)/2,ez,scene,false);for(let k=0;k<6;k++){const a=k*Math.PI/3;box3(ex+3.3*Math.cos(a)-.12,ex+3.3*Math.cos(a)+.12,0,UP+3,ez+3.3*Math.sin(a)-.12,ez+3.3*Math.sin(a)+.12,M.white)}
+  add(new THREE.CylinderGeometry(3.8,3.8,.4,24),M.white,ex,UP+3.2,ez);box3(ex-1.4,ex+1.4,UP-.3,UP,ez+3,-DW,M.white);
+  const cab=box3(ex-1,ex+1,0,2.4,ez-1,ez+1,std(0xf7f2e6,{roughness:.4}));lifts.push({m:cab,t:Math.random()*10})}
+cap('① 양 끝 계단식 테라스와 엘리베이터 탑을 짓는 중','rise',false);
+/* 아래층: 도로(왕복 4차로) · 자전거길 · 트러스 옆벽 */
+const bridge=new THREE.Group();scene.add(bridge);bridgeRef=bridge;capS=scene.children.length;
+box3(-BL,BL,LOW-1.4,LOW,-DW,DW,M.steel,bridge);box3(-BL,BL,LOW,LOW+.05,-3,3,M.deck,bridge);   // 아래 판(바닥 현) · 가운데 점검·설비 통로(배관·전선)
+for(const z of[-DW,DW]){for(let x=-BL;x<BL;x+=10){const g=new THREE.BoxGeometry(Math.hypot(10,UP-LOW),.35,.35);const m=add(g,M.steel,x+5,(LOW+UP)/2,z,bridge);m.rotation.z=((x/10)%2?1:-1)*Math.atan2(UP-LOW,10)}   // 트러스 사선
+  box3(-BL,BL,UP-.6,UP-.3,z-.25,z+.25,M.steel,bridge);box3(-BL,BL,LOW,LOW+.3,z-.25,z+.25,M.steel,bridge);for(let x=-BL;x<=BL;x+=10)box3(x-.25,x+.25,LOW,UP-.6,z-.25,z+.25,M.steel,bridge)}   // 수직재(10m마다)
+for(let x=-BL;x<=BL;x+=10){box3(x-.2,x+.2,LOW,LOW+.5,-DW,DW,M.steel,bridge);box3(x-.2,x+.2,UP-1.1,UP-.6,-DW,DW,M.steel,bridge);for(const s of[-1,1]){const g=new THREE.BoxGeometry(.3,Math.hypot(DW*2,UP-LOW-1),.3),m=add(g,M.steel,x,(LOW+UP-.6)/2,0,bridge);m.rotation.x=s*Math.atan2(DW*2,UP-LOW-1)}}   // 가로 X 브레이싱
+cap('① 바지선으로 실어 온 트러스 칸을 크레인으로 하나씩 올려 잇는 중','drop',true);
+/* 위층: 바닥 · 가운데 공원 산책로(나무·벤치·잔디) · 바닥 유리창 · 양쪽 3층 집 묶음(사이 틈 = 빛 골목) */
+box3(-BL,BL,UP-.6,UP,-DW,DW,M.steel,bridge);
+const slots=[];for(let x=-BL+6;x<BL-6;x+=26)slots.push(x);                                                                   // 집 묶음 시작 x
+box3(-BL,BL,UP,UP+.05,-8,8,M.deck,bridge);for(const z of[-5,5])box3(-BL+2,BL-2,UP+.05,UP+.2,z-1.4,z+1.4,M.lawn,bridge);
+for(let x=-BL+8;x<BL-6;x+=13){tree(x,UP+.2,(x/13)%2?-5:5,1,bridge);box3(x+3,x+5,UP+.05,UP+.5,-.4,.4,M.wood,bridge)}   // 나무 · 벤치
+for(const x of[-50,0,50])box3(x-5,x+5,UP-.02,UP+.08,-2.2,2.2,glass,bridge);                                                 // 바닥 유리창(아래 강이 보임)
+cap('① 트러스 위에 바닥판과 공원 산책로를 까는 중','drop',false);
+// 집 묶음: 길이 18m(상자 1.5개 길이) × 깊이 8m × 3층, 묶음 사이 8m 틈
+const HP={skin:[],win:[],trim:[],rail:[],lawn:[],wood:[]};const BX=(x1,x2,y1,y2,z1,z2,k)=>{const g=new THREE.BoxGeometry(x2-x1,y2-y1,z2-z1);g.translate((x1+x2)/2,(y1+y2)/2,(z1+z2)/2);HP[k].push(g)};
+BX(-9,9,0,9.9,-4,4,'skin');BX(-9.15,9.15,9.9,10.1,-4.15,4.15,'trim');BX(-8.6,8.6,10.1,10.25,-3.6,3.6,'lawn');
+for(let f=0;f<3;f++){const y=f*3.3;for(const sz of[-1,1]){const z=sz*4;BX(-8,8,y+.8,y+2.6,Math.min(z,z+sz*.05),Math.max(z,z+sz*.05),'win');for(let x=-8;x<=8;x+=4)BX(x-.06,x+.06,y+.7,y+2.7,Math.min(z,z+sz*.1),Math.max(z,z+sz*.1),'trim');
+  if(sz>0&&f){BX(-6,6,y,y+.12,z,z+1.2,'trim');BX(-6,6,y+.12,y+1.05,z+1.16,z+1.2,'rail')}}}
+BX(-1,1,0,2.3,-4.06,-4,'wood');
+const HT={};for(const k in HP)HT[k]=mergeGeometries(HP[k]);
+const houses=[];let nh=0;
+for(const sz of[-1,1])slots.forEach((x0,i)=>{const g=new THREE.Group();g.position.set(x0+9,UP,sz*13);g.rotation.y=sz>0?0:Math.PI;bridge.add(g);   // 바깥(강 경치) 쪽에 발코니
+  for(const k in HT){const m=new THREE.Mesh(HT[k],k==='skin'?SKIN[(i+(sz>0?1:0))%SKIN.length]:k==='win'?M.win:k==='lawn'?M.lawn:k==='wood'?M.wood:k==='rail'?glass:M.white);if(k==='skin'||k==='trim'){m.castShadow=m.receiveShadow=true}g.add(m)}nh+=6});
+cap('① 공장에서 만든 가벼운 조립식 집을 한 동씩 올리는 중','drop',true);
+for(const z of[-DW,DW])box3(-BL,BL,UP,UP+1.1,z-.03,z+.03,glass,bridge).castShadow=false;                                     // 가장자리 유리 난간
+// 가로등
+for(let x=-BL+10;x<BL;x+=20)for(const z of[-8.3,8.3]){box3(x-.08,x+.08,UP,UP+4,z-.08,z+.08,M.steel,bridge);add(new THREE.SphereGeometry(.35,10,8),M.lamp,x,UP+4.2,z,bridge,false)}
+cap('① 난간과 가로등을 다는 중','pop',false);
+/* 쌍둥이 다리: 같은 키트로 50m 옆(하류 쪽)에 하나 더 — 다리 폭 36m + 간격 50m */
+{const DZ=-(DW*2+50),cl=[];for(const o of[...STEPS[0].objs,...STEPS[1].objs]){const c=o.clone();c.position.z+=DZ;scene.add(c);cl.push(c);const lf=lifts.find(l=>l.m===o);if(lf)lifts.push({m:c,t:lf.t+3})}
+ const b2=bridge.clone();b2.position.z=DZ;scene.add(b2);cl.push(b2);STEPS.push({label:'④ 같은 조립 키트로 50m 옆에 쌍둥이 다리를 하나 더 세우는 중',kind:'rise',each:true,objs:cl});capS=scene.children.length}
+/* ===== 두 번째 다리: 아치 위 계단식 마을(돌 아치 · 리알토 다리처럼) — 강 안에 교각 없음 ===== */
+const ZA=-200,ZB=-400,stone=std(0xd8c7a6,{roughness:.85}),roofM=std(0x8a4b3a,{roughness:.7}),conc=std(0xe9e6df,{roughness:.6});
+let STP=null;function smallHouse(){if(STP)return STP;const P={skin:[],roof:[],win:[],trim:[],wood:[]},B=(x1,x2,y1,y2,z1,z2,k)=>{const g=new THREE.BoxGeometry(x2-x1,y2-y1,z2-z1);g.translate((x1+x2)/2,(y1+y2)/2,(z1+z2)/2);P[k].push(g)};
+  B(-2.7,2.7,0,5.8,-3.5,3.5,'skin');B(-2.75,2.75,2.85,3,-3.55,3.55,'trim');
+  const ang=Math.atan2(1.8,3.6),len=Math.hypot(3.6,1.8)+.3;for(const sz of[-1,1]){const g=new THREE.BoxGeometry(5.8,.18,len);g.rotateX(-sz*ang);g.translate(0,6.7,-sz*1.8);P.roof.push(g)}   // 박공지붕
+  for(const sz of[-1,1]){const z=sz*3.5;for(const y of[.6,3.5])B(-1.6,1.6,y+.4,y+1.9,Math.min(z,z+sz*.05),Math.max(z,z+sz*.05),'win')}   // 앞(강 경치)·뒤(골목) 창
+  B(-.5,.5,0,2.2,-3.56,-3.5,'wood');B(-2,2,3,3.1,3.5,4.4,'trim');                                                 // 골목 쪽 문 · 강 쪽 작은 발코니
+  const o={};for(const k in P)o[k]=mergeGeometries(P[k].map(g=>g.index?g.toNonIndexed():g));return STP=o}
+{const half=58,rise=11,base=3,yI=x=>base+rise*(1-(x/half)**2),seg=6,N=Math.round(2*half/seg),hw=13,ext=8;
+  const H=[];for(let i=0;i<N;i++){const xc=-half+(i+.5)*seg;H.push(Math.round((yI(xc)+3)*2)/2)}                  // 구간마다 바닥 높이(아치 위 3m, 0.5m 단위로 계단)
+  const sh=new THREE.Shape();sh.moveTo(-half-ext,base);sh.lineTo(-half,base);for(let x=-half;x<=half+.01;x+=2)sh.lineTo(x,yI(x));sh.lineTo(half+ext,base);
+  sh.lineTo(half+ext,H[N-1]);for(let i=N-1;i>=0;i--){const x1=-half+i*seg;sh.lineTo(x1+seg,H[i]);sh.lineTo(x1,H[i])}sh.lineTo(-half-ext,H[0]);
+  const g=new THREE.ExtrudeGeometry(sh,{depth:2*hw,bevelEnabled:false});add(g,stone,0,0,ZA-hw);                     // 돌 아치 몸체(아래는 아치, 위는 계단식 바닥)
+  for(const sx of[-1,1])box3(sx*half-6,sx*half+6,-4,base,ZA-hw-1,ZA+hw+1,std(0xbfb3a0));
+  for(const x of[-27,27]){const top=yI(x),p=add(new THREE.CylinderGeometry(1,1,top+8,32),M.pier,x,(top-8)/2,ZA);p.scale.set(2.8,1,12.5);   // 보조 교각 2개(유선형): 아치 중간을 받쳐 처짐·추력 부담을 나눔
+    box3(x-3.4,x+3.4,top-1.2,top+.3,ZA-hw,ZA+hw,std(0xbfb3a0))}                                                       // 교각 머리(아치 밑면과 맞붙음)                         // 양 끝 아치 받침(추력을 받는 단단한 기초)
+cap('② 아치 계단 마을: 아치 받침·돌 아치·보조 교각을 세우는 중','rise',false);
+  const T=smallHouse();
+  for(let i=0;i<N;i++){const x1=-half+i*seg,xc=x1+seg/2,h=H[i];
+    for(const sz of[-1,1]){const gg=new THREE.Group();gg.position.set(xc,h,ZA+sz*8.5);gg.rotation.y=sz>0?0:Math.PI;scene.add(gg);   // 골목 양쪽 집(강 쪽이 앞)
+      for(const k in T){const m=new THREE.Mesh(T[k],k==='skin'?SKIN[(i+(sz>0?1:0))%SKIN.length]:k==='roof'?roofM:k==='win'?M.win:k==='wood'?M.wood:M.white);if(k==='skin'||k==='roof'){m.castShadow=m.receiveShadow=true}gg.add(m)}}
+    if(i<N-1){const h2=H[i+1],dh=h2-h,n=Math.max(1,Math.ceil(Math.abs(dh)/.18)),tw=Math.min(2.8,n*.3)/n,xb=x1+seg;   // 골목 계단(구간 경계마다)
+      for(let k=1;k<=n;k++){const top=Math.min(h,h2)+k*Math.abs(dh)/n,xa=dh>0?xb-(n-k+1)*tw:xb,xz=dh>0?xb:xb+(n-k+1)*tw;box3(Math.min(xa,xz),Math.max(xa,xz),Math.min(h,h2),top,ZA-3.5,ZA+3.5,std(0xe2dccf))}}}
+  for(const sx of[-1,1]){const h0=sx<0?H[0]:H[N-1],n=Math.ceil((h0-base)/.18);for(let k=1;k<=n;k++){const a=sx*(half+ext+(k-1)*.34),b=sx*(half+ext+k*.34);box3(Math.min(a,b),Math.max(a,b),base,h0-k*(h0-base)/n+.01,ZA-3.5,ZA+3.5,std(0xe2dccf))}}}   // 양 끝 둑으로 내려가는 계단
+cap('② 아치 위에 집과 골목 계단을 하나씩 올리는 중','drop',true);
+/* ===== 세 번째 다리: 아치 도로형 — 높은 아치는 그대로, 양쪽 땅 위에 완만한 진입 경사로(고가 도로)를 붙여 차가 올라감 ===== */
+const carsC=[];
+{const half=58,yI=x=>3+11*(1-(x/half)**2),hw=15,Z=ZB,top=17,edge=14,G=.08,RL=(edge-.3)/G,L=half+RL;             // 다리 위: 가운데 17m → 끝 14m · 경사로: 8%로 14m → 땅(길이 약 170m)
+  const prof=x=>{const a=Math.abs(x);return a<=half?top-(top-edge)*(x/half)**2:Math.max(.3,edge-(a-half)*G)};       // 노면 높이
+  const BW=66,sh=new THREE.Shape();sh.moveTo(-BW,3);sh.lineTo(-half,3);for(let x=-half;x<=half+.01;x+=2)sh.lineTo(x,yI(x));sh.lineTo(BW,3);
+  for(let x=BW;x>=-BW-.01;x-=2)sh.lineTo(x,prof(x)-.15);
+  add(new THREE.ExtrudeGeometry(sh,{depth:2*hw,bevelEnabled:false}),stone,0,0,Z-hw);                              // 높은 돌 아치 몸체(계단 마을과 같은 높이)
+  for(const sx of[-1,1])box3(sx*half-6,sx*half+6,-4,3,Z-hw-1,Z+hw+1,std(0xbfb3a0));
+  for(const x of[-27,27]){const tp=yI(x),p=add(new THREE.CylinderGeometry(1,1,tp+8,32),M.pier,x,(tp-8)/2,Z);p.scale.set(2.8,1,14.5);box3(x-3.4,x+3.4,tp-1.2,tp+.3,Z-hw,Z+hw,std(0xbfb3a0))}   // 보조 교각 2개
+cap('③ 아치 도로형: 아치 받침·돌 아치·보조 교각을 세우는 중','rise',false);
+  // 진입 경사로(고가): 다리 끝에서 땅으로 8% 경사, 12m마다 기둥
+  for(const sx of[-1,1]){for(let d=0;d<RL;d+=12){const x=sx*(BW+d+6),y=prof(x),gy=Math.abs(x)>80?0:3;if(y-1.2>gy+.5)box3(x-.7,x+.7,gy,y-1.2,Z-6,Z-4.6,conc),box3(x-.7,x+.7,gy,y-1.2,Z+4.6,Z+6,conc)}}
+cap('③ 진입 경사로 기둥을 세우는 중','rise',false);
+  const roadM=std(0x5d6166),walkM=std(0xd9d2c4),deckM=std(0xe9e6df,{roughness:.6});
+  for(let x=-L;x<L;x+=2){const y1=prof(x),y2=prof(x+2),a=Math.atan2(y2-y1,2),cx=x+1,cy=(y1+y2)/2,len=Math.hypot(2,y2-y1)+.02,onB=Math.abs(cx)<=BW;
+    const seg=(z1,z2,mat,th)=>{const m=add(new THREE.BoxGeometry(len,th,z2-z1),mat,cx,cy-th/2+.05,Z+(z1+z2)/2);m.rotation.z=a;return m};
+    seg(-3.5,3.5,roadM,.2);for(const s of[-1,1]){seg(s>0?3.5:-6.5,s>0?6.5:-3.5,walkM,.35);seg(s>0?3.5:-3.7,s>0?3.7:-3.5,M.white,.45)}
+    if(!onB){seg(-6.6,6.6,deckM,1.1);for(const s of[-1,1])seg(s>0?6.5:-6.6,s>0?6.6:-6.5,glass,2.2).castShadow=false}   // 경사로 바닥판 · 유리 난간
+    if(Math.round(x)%6===0)seg(-.12,.12,M.white,.22)}
+  for(let x=-L+8;x<L-4;x+=12)for(const s of[-1,1]){if(Math.abs(x)<=BW)tree(x,prof(x)+.3,Z+s*5.2,.85);box3(x+5.9,x+6.1,prof(x+6)+.3,prof(x+6)+4.5,Z+s*6.2-.1,Z+s*6.2+.1,M.steel);add(new THREE.SphereGeometry(.3,8,6),M.lamp,x+6,prof(x+6)+4.7,Z+s*6.2,scene,false)}
+cap('③ 노면·보도·가로수·가로등을 까는 중','drop',false);
+  const T=smallHouse();let i=0;
+  for(let x=-half+3;x<=half-3;x+=6.2,i++)for(const sz of[-1,1]){const g=new THREE.Group();g.position.set(x,prof(x)+.2,Z+sz*10.5);g.rotation.y=sz>0?0:Math.PI;scene.add(g);   // 다리 위 양쪽 집(현관은 보도 쪽)
+    for(const k in T){const m=new THREE.Mesh(T[k],k==='skin'?SKIN[(i+(sz>0?1:0))%SKIN.length]:k==='roof'?roofM:k==='win'?M.win:k==='wood'?M.wood:M.white);if(k==='skin'||k==='roof'){m.castShadow=m.receiveShadow=true}g.add(m)}}
+  const carCols=[0xd2453a,0x2f6f9f,0xf2f3f5,0x3a3f45,0xf0a830];                                                   // 차: 경사로 → 다리 → 경사로
+  for(const[lz,dir]of[[-1.75,1],[1.75,-1]])for(let k=0;k<5;k++){const bus=k===0,c=new THREE.Group();scene.add(c);
+    box3(bus?-5:-2.2,bus?5:2.2,0,bus?2.9:1.4,-1,1,std(carCols[(k+(dir>0?0:2))%5],{metalness:.3,roughness:.4}),c);box3(bus?-4.6:-1.2,bus?4.6:1.2,bus?1.6:1,bus?2.5:1.45,-1.02,1.02,M.win,c);
+    c.position.z=Z+lz;carsC.push({o:c,x:-L+k*(2*L/5)+(dir>0?0:30),dir,v:bus?8:12,L,yRd:prof})}}
+cap('③ 다리 위에 거리 집을 올리고 차가 다니기 시작','drop',true);
+
+/* 배 · 차 */
+const movers=[];
+for(const[x,dir,len]of[[-12,1,18],[14,-1,24]]){const b=new THREE.Group();b.position.set(x,-4,dir*-200);scene.add(b);box3(-3,3,-.6,1.2,-len/2,len/2,M.white,b);box3(-2.4,2.4,1.2,3.4,-len/4,len/6,std(0x2f6f9f),b);movers.push({o:b,axis:'z',v:dir*6,lim:520,boat:true})}
+/* 홍수 수위 */
+const NORMAL=-4,flood=document.getElementById('flood');
+function setFlood(){const lv=+flood.value,wy=NORMAL+lv;water.position.y=wy-.5;movers.forEach(m=>{if(m.boat)m.o.position.y=wy});
+  const clr=(LOW-1)-wy;document.getElementById('floodLbl').textContent=`물 높이 +${lv.toFixed(1)}m`;
+  capEl.textContent=lv<=0?`평소 수위 · 다리 트러스 밑까지 여유 ${clr.toFixed(1)}m · 배가 지나갈 수 있어요`:wy>3?`둑(3m)을 넘는 큰 홍수 · 그래도 다리 바닥까지 ${clr.toFixed(1)}m 여유 — 다리 위 마을은 안전`:`홍수 · 물이 ${lv.toFixed(1)}m 불어남 · 다리 바닥까지 여유 ${clr.toFixed(1)}m`;capEl.style.display='block'}
+flood.oninput=setFlood;
+let moving=true;document.getElementById('asmBtn').onclick=()=>{if(!asm){const[p,t]=views.all;camera.position.set(...p);controls.target.set(...t);startAssembly()}};document.getElementById('moveBtn').onclick=e=>{moving=!moving;e.target.classList.toggle('on',moving)};
+const views={home:[[150,90,170],[0,10,-43]],twin:[[190,80,60],[0,10,-43]],all:[[320,210,-80],[0,8,-220]],archC:[[150,60,ZB+150],[40,10,ZB]],archA:[[95,45,ZA+95],[0,12,ZA]],entry:[[BL+95,28,70],[BL+22,9,0]],bank:[[-W-20,6,60],[0,14,0]],deck:[[-60,UP+1.7,3],[20,UP+2,0]],top:[[0,260,.1],[0,0,0]]};
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{const[p,t]=views[b.dataset.view];camera.position.set(...p);controls.target.set(...t)});
+let time='day';function applyEnv(){const n=time==='night',sky=n?0x0d1828:0xcfe6f3;scene.background=new THREE.Color(sky);scene.fog=new THREE.Fog(sky,500,1600);
+  sun.position.set(-120,180,140);sun.target.position.set(0,0,0);sun.intensity=n?.25:2.4;hemi.intensity=n?.2:.95;M.win.emissiveIntensity=n?1.4:0;M.lamp.emissiveIntensity=n?2.5:.3}
+document.querySelectorAll('[data-time]').forEach(b=>b.onclick=()=>{time=b.dataset.time;document.querySelectorAll('[data-time]').forEach(x=>x.classList.toggle('on',x===b));applyEnv()});
+function resize(){const w=view.clientWidth,h=view.clientHeight;if(!w||!h)return;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix()}
+new ResizeObserver(resize).observe(view);resize();applyEnv();setFlood();camera.position.set(...views.home[0]);controls.target.set(...views.home[1]);
+/* 우클릭(끌지 않고 한 번): 그 지점으로 부드럽게 날아가 확대 · 유리는 통과, 너머가 너무 멀면 유리 자체로 */
+const fly={q:null,t:0,from:null};let downXY=null;const pickRay=new THREE.Raycaster(),ptr=new THREE.Vector2();
+renderer.domElement.addEventListener('pointerdown',e=>{downXY=[e.clientX,e.clientY];fly.q=null});
+renderer.domElement.addEventListener('contextmenu',e=>e.preventDefault());
+renderer.domElement.addEventListener('pointerup',e=>{if(e.button!==2||!downXY||Math.hypot(e.clientX-downXY[0],e.clientY-downXY[1])>5)return;
+  const r=renderer.domElement.getBoundingClientRect();ptr.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);pickRay.setFromCamera(ptr,camera);
+  let glassHit=null,hit=null;for(const h of pickRay.intersectObjects(scene.children,true)){const o=h.object;if(o.material&&o.material.transparent&&o!==water){if(!glassHit)glassHit=h;continue}hit=h;break}
+  if(glassHit&&(!hit||hit.distance-glassHit.distance>15))hit=glassHit;if(!hit)return;
+  const dir=camera.position.clone().sub(hit.point);dir.setLength(Math.min(dir.length(),45));                   // 그 지점 앞 45m까지 다가감
+  fly.q={p:hit.point.clone().add(dir),t:hit.point.clone()};fly.t=0;fly.from={p:camera.position.clone(),t:controls.target.clone()}});
+let asm=null;
+function startAssembly(){let t=0;const list=[];
+  for(const st of STEPS){const n=st.objs.length,gap=st.each?Math.min(.12,8/n):0;
+    st.objs.forEach((o,i)=>{o.userData.by??=o.position.y;o.userData.sc??=o.scale.clone();o.visible=false;list.push({o,kind:st.kind,start:t+(st.each?i*gap:0),dur:st.kind==='rise'?2.2:1.2,label:st.label})});
+    t+=(st.each?n*gap:0)+(st.kind==='rise'?2.4:1.4)+.4}
+  asm={t:0,list,end:t+1};document.getElementById('asmBtn').classList.add('on')}
+function updateAssembly(dt){if(!asm)return;asm.t+=dt;let cur=null;
+  for(const a of asm.list){const k=Math.min(1,Math.max(0,(asm.t-a.start)/a.dur)),e=1-Math.pow(1-k,3),o=a.o;o.visible=asm.t>a.start;
+    if(a.kind==='rise')o.scale.y=Math.max(.001,e)*o.userData.sc.y;else if(a.kind==='drop')o.position.y=o.userData.by+18*(1-e);else o.scale.copy(o.userData.sc).multiplyScalar(Math.max(.001,e));
+    if(asm.t>a.start&&k<1)cur=a}
+  if(cur){capEl.textContent=cur.label;capEl.style.display='block'}
+  if(asm.t>asm.end){for(const a of asm.list){a.o.visible=true;a.o.position.y=a.o.userData.by;a.o.scale.copy(a.o.userData.sc)}asm=null;capEl.textContent='조립 완료! 무거운 다리 몸통 위에 가벼운 조립식 집을 올렸어요';setTimeout(()=>{if(!asm)setFlood()},2500);document.getElementById('asmBtn').classList.remove('on')}}
+const clock=new THREE.Clock();
+(function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05);
+  if(moving)for(const m of movers){m.o.position[m.axis]+=m.v*dt;if(m.o.position[m.axis]>m.lim)m.o.position[m.axis]=-m.lim;if(m.o.position[m.axis]<-m.lim)m.o.position[m.axis]=m.lim}
+  if(fly.q){fly.t+=dt/1.4;const k=Math.min(1,fly.t),e=k*k*(3-2*k);camera.position.lerpVectors(fly.from.p,fly.q.p,e);controls.target.lerpVectors(fly.from.t,fly.q.t,e);if(k>=1)fly.q=null}
+  if(moving)for(const c of carsC){c.x+=c.dir*c.v*dt;if(c.x>c.L)c.x=-c.L;if(c.x<-c.L)c.x=c.L;const y=c.yRd(c.x),y2=c.yRd(c.x+.5);c.o.position.set(c.x,y+.25,c.o.position.z);c.o.rotation.z=Math.atan2(y2-y,.5)}
+  for(const l of lifts){l.t+=dt;const k=(Math.sin(l.t*.35)+1)/2;l.m.position.y=1.2+k*(UP-.1)}
+  updateAssembly(dt);controls.update();renderer.render(scene,camera)})();
+</script>
+</body>
+</html>
