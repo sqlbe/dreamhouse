@@ -114,6 +114,9 @@ select{font:inherit;font-size:12px;padding:5px 8px;border:1px solid var(--line);
       <li>판마다 코어 3개 → 대피 방향 최소 3곳. 정원 판·중정이 불길 차단과 대피 집결지 역할.</li>
     </ul>
     <div class="note"><b>확인할 점</b>: 판 36m 경간의 트러스 깊이, 판·코어 이음부(미끄럼 받침), 유리 바닥(접합 강화유리), 판 사이 바람길, 실용형 엘리베이터 대수, 판 위 흙 무게(하늘 대지형), 구조 계산.</div>
+    <h3>10. 설정 바로가기 (누르면 그 설정으로 바로 열림)</h3>
+    <p style="color:var(--sub);margin:0 0 6px">모든 조합은 수천 가지라, 항목별로 하나씩 바꿔 보는 묶음과 추천 조합으로 정리했습니다. 주소는 링크 복사·공유에도 그대로 쓸 수 있어요.</p>
+    <div id="presets"></div>
   </div></div>
   <div class="hint"><b>코어</b> = 지름 9m 유리 기둥: 유리 엘리베이터 2대 + 가위 계단(엇갈린 두 계단 = 피난 계단 2개 효과) + 배관, 36m 간격 벌집 격자<br><b>삼각 판</b> = 코어 3개에 식탁처럼 걸쳐 받침(외팔보·행어 없음) · 판 속으로 배관·전기<br><b>판 위</b> = 상자 3층 묶음(변마다): 1~2층 복층 집 + 3층 옥상정원 집 · 한쪽 끝 바깥 계단, 다른 쪽 끝 작은 엘리베이터(노약자용) + 가운데 정원 + 가장자리 산책길<br><b>판 배치</b> = 모두 채움(판 가운데 빛 우물이 위아래로 뚫림 · 판 밑면은 흰 반사면) 또는 층마다 교차(한 칸 걸러 상자 판, 나머지는 투명 유리 판 — 화분 정원·쉼터로 쓰고 햇빛은 아래까지 · 땅의 빈 칸은 공원)</div>
   <div class="cap" id="cap"></div>
@@ -127,18 +130,40 @@ select{font:inherit;font-size:12px;padding:5px 8px;border:1px solid var(--line);
     <div class="row"><span class="lbl">높이</span><select id="height">
       <option value="flat">평평하게</option><option value="mountain">산(가운데 높게)</option><option value="basin">분지(가장자리 높게)</option>
       <option value="wave">파도</option><option value="south">남쪽 낮게(계단식)</option><option value="pyramid">계단식 피라미드</option><option value="spiral">나선으로 올라감</option><option value="amphi">원형 극장(가운데 낮게)</option><option value="twin">쌍봉</option><option value="slope">한쪽 경사(동쪽 높게)</option></select></div>
-    <div class="row"><span class="lbl">키우기</span><button id="c1">코어 +1</button><button id="c6">코어 +6</button><button id="reset">처음으로</button><button id="topView">위에서 보기</button><button id="asmBtn">전체 조립 보기</button></div>
-    <div class="row"><span class="lbl">구성</span><select id="form"><option value="slab">삼각 판형(판 위에 집)</option><option value="bridge">다리형(변 위 건물 + 삼각 중정)</option><option value="sky">하늘 대지형(마당 있는 단독주택)</option><option value="mixed">혼합형(아래 다리형 + 맨 위 하늘 대지)</option></select></div>
+    <div class="row"><span class="lbl">키우기</span><button id="c1">코어 +1</button><button id="c6">코어 +6</button><button id="reset">처음으로</button><button id="topView">위에서 보기</button><button id="shareBtn">링크 복사</button><button id="asmBtn">전체 조립 보기</button></div>
+    <div class="row"><span class="lbl">구성</span><select id="form"><option value="slab">삼각 판형(판 위에 집)</option><option value="bridge">다리형(변 위 건물 + 삼각 중정)</option><option value="sky">하늘 대지형(흙 판 위 단독·타운하우스·빌라)</option><option value="mixed">혼합형(아래 다리형 + 맨 위 하늘 대지)</option></select></div>
     <div class="row"><span class="lbl">생활 방식</span><select id="life"><option value="comfort">쾌적형(상자 3층 + 정원층)</option><option value="A">실용형 A(상자 촘촘 4층)</option><option value="B">실용형 B(삼각 블록 4층 + 빛 골목)</option></select></div>
     <div class="row"><span class="lbl">판 배치</span><button data-full="1">모두 채움</button><button data-full="0" class="on">층마다 교차</button></div>
     <div class="row"><span class="lbl">단 수</span><button id="tMinus">−</button><span class="num" id="tNum"></span><button id="tPlus">+</button></div>
     <div class="row"><span class="lbl">엘리베이터</span><button id="liftBtn">움직이기</button></div>
     <div class="row"><span class="lbl">시뮬레이션</span><button id="quakeBtn">지진 발생</button></div>
+    <div class="row"><span class="lbl">햇빛</span><select id="season"><option value="eq">봄·가을(춘분)</option><option value="sum">여름(하지)</option><option value="win">겨울(동지)</option></select><input id="hour" type="range" min="5" max="20" step="0.25" value="14" style="width:110px"><span class="num" id="hourLbl">14:00</span><button id="dayPlay">하루 재생</button><button id="sunCheck">일조 분석</button></div>
     <div class="row"><span class="lbl">시간</span><button data-time="day" class="on">낮</button><button data-time="night">밤</button></div>
     <div class="row"><span class="lbl">현재</span><span class="num" id="count"></span></div>
   </div>
 </main>
 <script>
+/* 설정 바로가기 표: 메뉴 선택지에서 자동으로 만들어 항상 메뉴와 일치 */
+(function(){const opts=id=>[...document.getElementById(id).options].map(o=>[o.value,o.textContent]);
+  const base={s:'hex',z:1,h:'flat',f:'slab',l:'comfort',a:0,n:3};
+  const url=o=>'?'+new URLSearchParams(Object.assign({},base,o)).toString();
+  const nm={s:Object.fromEntries(opts('shape')),z:Object.fromEntries(opts('size')),h:Object.fromEntries(opts('height')),f:Object.fromEntries(opts('form')),l:Object.fromEntries(opts('life')),a:{0:'층마다 교차',1:'모두 채움'}};
+  const desc=o=>{const c=Object.assign({},base,o);return `${nm.s[c.s]}${c.t?` "${c.t}"`:''} · ${nm.z[c.z]} · ${nm.h[c.h]} · ${nm.f[c.f]} · ${nm.l[c.l]} · ${nm.a[c.a]} · ${c.n}단`};
+  const groups=[
+    ['모양별 (작게 · 평평 · 삼각 판형 · 쾌적형 · 모두 채움 · 2단)',opts('shape').map(([v])=>({s:v,a:1,n:2,...(v==='text'?{t:'집'}:{})}))],
+    ['크기별 (육각형)',opts('size').map(([v])=>({z:+v}))],
+    ['높이별 (육각형 · 보통 · 4단)',opts('height').map(([v])=>({h:v,z:2,n:4}))],
+    ['구성 × 생활 방식 (육각형 · 3단)',opts('form').flatMap(([f])=>(f==='sky'?[['comfort']]:opts('life')).map(([l])=>({f,l})))],
+    ['판 배치 × 생활 방식 (삼각 판형)',[0,1].flatMap(a=>opts('life').map(([l])=>({a,l})))],
+    ['단 수별 (육각형)',[1,2,3,4,5,6,7].map(n=>({n}))],
+    ['추천 조합',[{s:'zigzag',l:'A',a:0,n:3},{s:'star',z:2,h:'pyramid',n:5},{s:'tri',z:2,h:'pyramid',l:'A',n:5},{s:'ring',h:'amphi',n:4},{s:'snow',a:1,n:2},
+      {s:'spiral',h:'spiral',n:5},{s:'islands',f:'mixed',n:3},{s:'crescent',f:'bridge',n:3},{s:'hex',z:2,f:'sky',n:2},{s:'v',h:'south',l:'A',n:4},{s:'text',t:'집',a:1,n:1},{s:'text',t:'HOME',z:0,a:1,n:1}]]];
+  let h='';for(const[g,list]of groups){h+=`<h4 style="margin:14px 0 4px;font-size:14px">${g}</h4><table><tr><th style="width:40px">#</th><th>설정 내용</th><th style="width:170px">바로가기</th></tr>`;
+    list.forEach((o,i)=>{const u=url(o);h+=`<tr><td>${i+1}</td><td>${desc(o)}<br><code style="font-size:11px;color:#6b7785">house8.html${u}</code></td><td><a href="${u}" style="color:#2f6f9f;font-weight:700">이 설정 열기 →</a><br><button class="cpy" data-u="${u}" style="margin-top:4px">링크 복사</button></td></tr>`});h+='</table>'}
+  const box=document.getElementById('presets');box.innerHTML=h;
+  box.addEventListener('click',async e=>{const b=e.target.closest('.cpy');if(!b)return;const full=location.origin+location.pathname+b.dataset.u;
+    try{await navigator.clipboard.writeText(full)}catch(_){const t=document.createElement('textarea');t.value=full;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove()}
+    const old=b.textContent;b.textContent='복사됨 ✓';b.classList.add('on');setTimeout(()=>{b.textContent=old;b.classList.remove('on')},1500)})})();
 const uiBtn=document.getElementById('uiToggle');
 document.getElementById('tab3d').onclick=()=>{document.getElementById('memo').classList.remove('on');document.getElementById('tab3d').classList.add('on');document.getElementById('tabMemo').classList.remove('on')};
 document.getElementById('tabMemo').onclick=()=>{document.getElementById('memo').classList.add('on');document.getElementById('tabMemo').classList.add('on');document.getElementById('tab3d').classList.remove('on')};
@@ -188,14 +213,14 @@ function stackExtras(x,y,z,rot,nf=3){const g=new THREE.Group();g.position.set(x,
     box3(6.1,8.4,ym-.12,ym,1.2,1.8,stairM,g);box3(6.05,8.4,yt-.12,yt,-1.8,-1.2,stairM,g)}
   const hh=(nf-1)*FH;box3(8.38,8.42,0,hh+1.1,-1.8,1.8,shaftG,g).castShadow=false;
   box3(-7.4,-6.2,0,hh+2.7,-.6,.6,shaftG,g).castShadow=false;box3(-7.45,-6.15,hh+2.7,hh+2.85,-.65,.65,M.trim,g);   // 작은 엘리베이터(노약자용)
-  const cab=box3(-7.3,-6.3,.05,2.3,-.5,.5,cabM,g);lifts.push({m:cab,y0:.05,y1:hh+.05,y:Math.random()*hh,dir:1,sp:1.2,wait:0})}
+  const cab=box3(-7.3,-6.3,.05,2.3,-.5,.5,cabM,g);cab.userData.keep=true;lifts.push({m:cab,y0:.05,y1:hh+.05,y:Math.random()*hh,dir:1,sp:1.2,wait:0})}
 function buildCore(p,top,nt){const g=new THREE.Group();g.position.set(p.x,0,p.z);town.add(g);              // 지름 9m 유리 코어
   add(new THREE.CylinderGeometry(4.5,4.5,top,32,1,true),shaftG,0,top/2,0,g,false);
   for(let k=0;k<6;k++){const a=k*Math.PI/3,cx=4.4*Math.cos(a),cz=-4.4*Math.sin(a);box3(cx-.16,cx+.16,0,top,cz-.16,cz+.16,M.core,g)}
   for(let t=0;t<nt;t++)add(new THREE.CylinderGeometry(4.55,4.55,.8,32),M.core,0,tierY(t)+.4,0,g);           // 단마다 승강장(판과 같은 높이)
   add(new THREE.CylinderGeometry(4.8,4.8,.6,32),M.core,0,top+.3,0,g);add(new THREE.CylinderGeometry(4.5,4.5,.3,32),M.lawn,0,top+.75,0,g);add(new THREE.SphereGeometry(2,10,8),M.plant,0,top+2.7,0,g);
   for(const sx of[-1.3,1.3]){box3(sx-1.1,sx+1.1,0,top,1.2,3.4,shaftG,g).castShadow=false;                  // 유리 엘리베이터 2대
-    const cab=box3(sx-.9,sx+.9,0,2.4,1.4,3.2,cabM,g);lifts.push({m:cab,y0:.8,y1:top-3,y:Math.random()*(top-4),dir:Math.random()<.5?1:-1,sp:3,wait:0})}
+    const cab=box3(sx-.9,sx+.9,0,2.4,1.4,3.2,cabM,g);cab.userData.keep=true;lifts.push({m:cab,y0:.8,y1:top-3,y:Math.random()*(top-4),dir:Math.random()<.5?1:-1,sp:3,wait:0})}
   box3(-3.1,3.1,0,top,-.7,-.6,M.core,g);                                                                   // 계단실 벽
   const fh=TP/4,n=Math.floor((top-1)/fh);                                                                  // 가위 계단: 층마다 엇갈린 두 계단(X자)
   for(let k=0;k<n;k++){const y=k*fh;flightX(g,-2.5,y,2.5,y+fh,-3.1,-2.1);flightX(g,2.5,y,-2.5,y+fh,-1.9,-.9);
@@ -269,6 +294,7 @@ function glassCourt(pts,t){const c={x:(pts[0].x+pts[1].x+pts[2].x)/3,z:(pts[0].z
   cap(2*t+.6,'drop',`${t+1}단 삼각 투명 판넬과 길을 거는 중`)}
 function buildBar(pa,pb,t,nf,roof,si){const dx=pb.x-pa.x,dz=pb.z-pa.z,g=new THREE.Group();g.position.set((pa.x+pb.x)/2,tierY(t),(pa.z+pb.z)/2);g.rotation.y=Math.atan2(-dz,dx);town.add(g);
   const T=barTpl(nf,roof);for(const k in T){const mat=k==='skin'?SKIN[si%SKIN.length]:k==='win'?M.win:k==='lawn'?M.lawn:HM[k]||M.slab,m=new THREE.Mesh(T[k],mat);if(k==='skin'||k==='dark'||k==='trim'){m.castShadow=true;m.receiveShadow=true}g.add(m)}
+  for(let f=0;f<nf;f++)for(const sz of[-1,1])WINS.push({o:g,p:[0,.8+f*FH+1.6,sz*(BAR.W/2+.1)],n:[0,0,sz],pair:sz>0});
   HOMES+=nf;AREA+=nf*BAR.LB*BAR.W;cap(2*t+1,'drop',`${t+1}단 다리 건물을 코어 사이에 걸치는 중`)}
 /* 하늘 대지형: 판 = 흙 깐 땅, 그 위 마당 있는 2층 단독주택(박공지붕) */
 const SM={roof:std(0x8a4b3a,{roughness:.7}),hedge:std(0x4f8a3c),path:std(0xd8cfbf),soil:std(0x7fae5a)};
@@ -286,6 +312,24 @@ function skyHouseTpl(){if(STPL)return STPL;const P={skin:[],roof:[],win:[],trim:
   for(const x of[-2.2,1.6])for(const y of[1.1,4.0])B(x-.6,x+.6,y,y+1.1,2.75,2.8,'win');                       // 뒤 창
   B(-3.4,.6,2.9,3.02,-3.9,-2.75,'trim');B(-3.4,.6,3.02,3.9,-3.92,-3.88,'rail');                                // 2층 작은 발코니
   const o={};for(const k in P)if(P[k].length)o[k]=mergeGeometries(P[k].map(g=>g.index?g.toNonIndexed():g));return STPL=o}
+let TTPL=null,VTPL=null;
+function tplBuild(fn){const P={skin:[],roof:[],win:[],trim:[],wood:[],dark:[],rail:[],lawn:[]};
+  const B=(x1,x2,y1,y2,z1,z2,k)=>{const g=new THREE.BoxGeometry(x2-x1,y2-y1,z2-z1);g.translate((x1+x2)/2,(y1+y2)/2,(z1+z2)/2);P[k].push(g)};fn(B,P);
+  const o={};for(const k in P)if(P[k].length)o[k]=mergeGeometries(P[k].map(g=>g.index?g.toNonIndexed():g));return o}
+function townTpl(){if(TTPL)return TTPL;return TTPL=tplBuild((B,P)=>{                                                   // 3층 타운하우스 한 줄(4세대, 폭 12m · 깊이 5m)
+  B(-6,6,0,9,-2.5,2.5,'skin');for(const y of[3,6])B(-6.05,6.05,y-.06,y+.06,-2.55,2.55,'trim');
+  const ang=Math.atan2(2,2.6),len=Math.hypot(2.6,2)+.35;for(const sz of[-1,1]){const g=new THREE.BoxGeometry(12.4,.2,len);g.rotateX(-sz*ang);g.translate(0,10,-sz*1.3);P.roof.push(g)}
+  for(const sx of[-1,1]){const sh=new THREE.Shape([new THREE.Vector2(-2.5,0),new THREE.Vector2(2.5,0),new THREE.Vector2(0,1.95)]),g=new THREE.ExtrudeGeometry(sh,{depth:.15,bevelEnabled:false});g.rotateY(Math.PI/2);g.translate(sx*6-(sx>0?0:.15),9,0);P.skin.push(g)}
+  for(const x of[-3,0,3])B(x-.08,x+.08,0,9.2,-2.65,-2.5,'trim');                                                   // 세대 경계 벽
+  for(const cx of[-4.5,-1.5,1.5,4.5]){B(cx-.5,cx+.3,0,2.2,-2.56,-2.5,'wood');B(cx-.7,cx+.5,2.3,2.4,-3.1,-2.5,'trim');B(cx+.55,cx+1.2,.9,2.1,-2.55,-2.5,'win');   // 현관 · 차양 · 1층 창
+    for(const y of[3.6,6.6]){B(cx-1.1,cx+1.1,y,y+1.8,-2.55,-2.5,'win');B(cx-1.15,cx+1.15,y-.08,y,-2.62,-2.5,'trim')}B(cx-1,cx+1,4.2,5.4,2.5,2.55,'win');B(cx-1,cx+1,7.2,8.2,2.5,2.55,'win')}
+  for(const cx of[-3,3])B(cx-.35,cx+.35,10,11.6,.4,1.1,'dark')})}                                                  // 굴뚝
+function villaTpl(){if(VTPL)return VTPL;return VTPL=tplBuild((B,P)=>{                                                 // 4층 빌라(층마다 2세대, 8m × 6m)
+  B(-4,4,0,12,-3,3,'skin');for(let f=1;f<4;f++)B(-4.05,4.05,f*3-.06,f*3+.06,-3.05,3.05,'trim');
+  B(-4.15,4.15,12,12.5,-3.15,3.15,'trim');B(-3.6,3.6,12.5,12.65,-2.6,2.6,'lawn');                                 // 난간벽 · 옥상 정원
+  for(let f=0;f<4;f++){const y=f*3;for(const cx of[-2,2]){B(cx-1.3,cx+1.3,y+.6,y+2.5,-3.05,-3,'win');
+      if(f){B(cx-1.5,cx+1.5,y,y+.12,-4,-3,'trim');B(cx-1.5,cx+1.5,y+.12,y+1.05,-4.02,-3.96,'rail')}B(cx-.8,cx+.8,y+1.1,y+2.2,3,3.05,'win')}}
+  B(-1,1,0,2.3,3,3.06,'wood');B(-1.4,1.4,2.45,2.55,3,3.9,'trim')})}                                               // 뒤 현관 · 차양
 function skyTri(pts,t,fi){const c={x:(pts[0].x+pts[1].x+pts[2].x)/3,z:(pts[0].z+pts[1].z+pts[2].z)/3},y=tierY(t),y0=(t?.85:.32)+.5;
   add(slabGeo(pts,1,c,t?.8:.3),t?M.slab:M.plaza,0,y,0,town);add(slabGeo(pts,.97,c,.5),SM.soil,0,y+y0-.5,0,town);   // 판 + 흙(약 1m 깊이 느낌)
   add(new THREE.CylinderGeometry(1.8,1.8,.06,16),SM.path,c.x,y+y0+.03,c.z,town);add(new THREE.CylinderGeometry(.16,.2,2,8),M.trunk,c.x,y+y0+1,c.z,town);add(new THREE.SphereGeometry(1.9,10,8),M.plant,c.x,y+y0+3,c.z,town);   // 가운데 작은 광장 · 큰 나무
@@ -293,14 +337,18 @@ function skyTri(pts,t,fi){const c={x:(pts[0].x+pts[1].x+pts[2].x)/3,z:(pts[0].z+
   for(let e=0;e<3;e++){const A=pts[e],B=pts[(e+1)%3],ux=(B.x-A.x)/S,uz=(B.z-A.z)/S;let nx=-uz,nz=ux;if(nx*(c.x-A.x)+nz*(c.z-A.z)<0){nx=-nx;nz=-nz}
     const rot=Math.atan2(-uz,ux),mx=(A.x+B.x)/2,mz=(A.z+B.z)/2;
     const hg=add(new THREE.BoxGeometry(S-11,.9,.6),SM.hedge,mx+nx*.9,y+y0+.45,mz+nz*.9,town);hg.rotation.y=rot;      // 가장자리 산울타리
-    for(const a of[-4.2,4.2]){const h2=add(new THREE.BoxGeometry(.4,.7,1.6),SM.hedge,mx+ux*a+nx*1.9,y+y0+.35,mz+uz*a+nz*1.9,town);h2.rotation.y=rot}   // 마당 경계
-    const pw=add(new THREE.BoxGeometry(1.1,.05,3),SM.path,mx+ux*1.1+nx*3.2,y+y0+.03,mz+uz*1.1+nz*3.2,town);pw.rotation.y=rot;   // 현관 길
-    const g=new THREE.Group();g.position.set(mx+nx*5.25,y+y0,mz+nz*5.25);g.rotation.y=rot;town.add(g);
+    if(LIFE==='comfort')for(const a of[-4.2,4.2]){const h2=add(new THREE.BoxGeometry(.4,.7,1.6),SM.hedge,mx+ux*a+nx*1.9,y+y0+.35,mz+uz*a+nz*1.9,town);h2.rotation.y=rot}   // 마당 경계
+    if(LIFE==='comfort'){const pw=add(new THREE.BoxGeometry(1.1,.05,3),SM.path,mx+ux*1.1+nx*3.2,y+y0+.03,mz+uz*1.1+nz*3.2,town);pw.rotation.y=rot}   // 현관 길
+    const ins=LIFE==='A'?4.1:LIFE==='B'?5:5.25,g=new THREE.Group();g.position.set(mx+nx*ins,y+y0,mz+nz*ins);g.rotation.y=rot;town.add(g);
     const sgn=Math.sign(Math.sin(rot)*nx+Math.cos(rot)*nz)||1,h=new THREE.Group();if(sgn<0)h.rotation.y=Math.PI;g.add(h);
-    const T=skyHouseTpl();for(const k in T){const mat=k==='skin'?SKIN[(e+t+fi)%SKIN.length]:k==='roof'?SM.roof:k==='win'?M.win:HM[k],m=new THREE.Mesh(T[k],mat);if(k==='skin'||k==='roof'){m.castShadow=true;m.receiveShadow=true}h.add(m)}
-    for(const a of[-6,6]){const tx=mx+ux*a+nx*2.6,tz=mz+uz*a+nz*2.6;add(new THREE.CylinderGeometry(.12,.16,1.6,8),M.trunk,tx,y+y0+.8,tz,town);add(new THREE.SphereGeometry(1.2,10,8),(e+a)%2?M.plant:M.plant2,tx,y+y0+2.1,tz,town)}   // 마당 나무
-    HOMES+=1;AREA+=77;cap(2*t+1,'drop',`${t+1}단에 마당 있는 집을 한 채씩 짓는 중`)}}
-function houseBox(g,L,both,si,sgn){const h=new THREE.Group();if(sgn<0)h.rotation.y=Math.PI;g.add(h);const T=houseTpl(L,both);
+    if(LIFE==='A')for(const cx of[-4.5,-1.5,1.5,4.5])WINS.push({o:h,p:[cx,4.5,-2.7],n:[0,0,-1]});
+    else if(LIFE==='B')for(let f=0;f<4;f++)for(const cx of[-2,2])WINS.push({o:h,p:[cx,f*3+1.6,-3.2],n:[0,0,-1]});
+    else WINS.push({o:h,p:[-1.8,2,-2.9],n:[0,0,-1]});
+    const T=LIFE==='A'?townTpl():LIFE==='B'?villaTpl():skyHouseTpl();for(const k in T){const mat=k==='skin'?SKIN[(e+t+fi)%SKIN.length]:k==='roof'?SM.roof:k==='win'?M.win:k==='lawn'?M.lawn:HM[k],m=new THREE.Mesh(T[k],mat);if(k==='skin'||k==='roof'){m.castShadow=true;m.receiveShadow=true}h.add(m)}
+    for(const a of(LIFE==='comfort'?[-6,6]:[-8.5,8.5])){const tx=mx+ux*a+nx*2.6,tz=mz+uz*a+nz*2.6;add(new THREE.CylinderGeometry(.12,.16,1.6,8),M.trunk,tx,y+y0+.8,tz,town);add(new THREE.SphereGeometry(1.2,10,8),(e+a)%2?M.plant:M.plant2,tx,y+y0+2.1,tz,town)}   // 마당 나무
+    if(LIFE==='A'){HOMES+=4;AREA+=4*45}else if(LIFE==='B'){HOMES+=8;AREA+=8*24}else{HOMES+=1;AREA+=77}
+    cap(2*t+1,'drop',LIFE==='A'?`${t+1}단에 타운하우스 줄을 짓는 중`:LIFE==='B'?`${t+1}단에 마당 딸린 빌라를 짓는 중`:`${t+1}단에 마당 있는 집을 한 채씩 짓는 중`)}}
+function houseBox(g,L,both,si,sgn){const h=new THREE.Group();if(sgn<0)h.rotation.y=Math.PI;g.add(h);WINS.push({o:h,p:[0,1.6,-1.95],n:[0,0,-1]});if(both)WINS.push({o:h,p:[0,1.6,1.95],n:[0,0,1],pair:true});const T=houseTpl(L,both);
   for(const k in T){const mat=k==='skin'?SKIN[si%SKIN.length]:k==='win'?M.win:HM[k],m=new THREE.Mesh(T[k],mat);if(k==='skin'||k==='trim'){m.castShadow=true;m.receiveShadow=true}h.add(m)}}
 function holeTriGeo(pts,c,k,kh,h){const sh=triShape(pts,k,c),hole=triShape(pts,kh,c);sh.holes.push(new THREE.Path(hole.getPoints().reverse()));
   const g=new THREE.ExtrudeGeometry(sh,{depth:h,bevelEnabled:false});g.rotateX(-Math.PI/2);return g}
@@ -425,7 +473,23 @@ function heightRaw(x,z,C){const r=Math.hypot(x-C.cx,z-C.cz)/C.dm;
     case 'twin':{const d1=Math.hypot(x-(C.cx-C.dm*.5),z-C.cz),d2=Math.hypot(x-(C.cx+C.dm*.5),z-C.cz);return Math.max(0,1-d1/(.75*C.dm),1-d2/(.75*C.dm))}
     case 'slope':return C.x1>C.x0?(x-C.x0)/(C.x1-C.x0):1;                                             // 서쪽 낮고 동쪽 높게
     default:return 1}}
-function build(){drawRiver();beams=[];mirrors=[];TP=FORM==='sky'?19:15.2;town.clear();lifts=[];HOMES=0;AREA=0;steps=[];capIdx=0;asm=null;say('');let nb=0,nt=0,topMax=0;
+function saveURL(){const q=new URLSearchParams({s:SHAPE,z:SIZE,h:HMODE,f:FORM,l:LIFE,a:FULL?1:0,n:NT});if(SHAPE==='text')q.set('t',document.getElementById('txt').value);
+  try{history.replaceState(null,'','?'+q.toString())}catch(e){}}
+function loadURL(){const q=new URLSearchParams(location.search);if(!q.has('s'))return;const sel=(id,v)=>{const e=document.getElementById(id);if(v!=null&&[...e.options].some(o=>o.value===v))e.value=v;return e.value};
+  SHAPE=sel('shape',q.get('s'));SIZE=+sel('size',q.get('z'));HMODE=sel('height',q.get('h'));FORM=sel('form',q.get('f'));LIFE=sel('life',q.get('l'));
+  if(q.has('a')){FULL=q.get('a')==='1';document.querySelectorAll('[data-full]').forEach(b=>b.classList.toggle('on',(b.dataset.full==='1')===FULL))}
+  if(q.has('n'))NT=Math.max(1,Math.min(7,+q.get('n')||3));if(q.has('t'))document.getElementById('txt').value=q.get('t').slice(0,4);
+  document.getElementById('txt').style.display=SHAPE==='text'?'':'none'}
+function bake(){town.updateMatrixWorld(true);const inv=new THREE.Matrix4().copy(town.matrixWorld).invert(),groups=new Map(),kill=[];
+  town.traverse(o=>{if(!o.isMesh)return;let a=o;while(a&&a!==town){if(a.userData.keep)return;a=a.parent}
+    let g=o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone();for(const k of Object.keys(g.attributes))if(!['position','normal','uv'].includes(k))g.deleteAttribute(k);
+    if(!g.attributes.normal)g.computeVertexNormals();if(!g.attributes.uv)g.setAttribute('uv',new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count*2),2));
+    g.clearGroups();g.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv,o.matrixWorld));
+    const key=o.material.uuid+'|'+(o.castShadow?1:0);if(!groups.has(key))groups.set(key,{mat:o.material,cast:o.castShadow,list:[]});groups.get(key).list.push(g);kill.push(o)});
+  for(const o of kill)o.parent.remove(o);
+  for(const{mat,cast,list}of groups.values()){const m=new THREE.Mesh(mergeGeometries(list),mat);m.castShadow=cast;m.receiveShadow=true;town.add(m)}
+  for(let i=town.children.length-1;i>=0;i--){const c=town.children[i];if(c.isGroup&&!c.children.length)town.remove(c)}}
+function build(noBake){WINS=[];if(typeof markG!=='undefined')markG.clear();drawRiver();beams=[];mirrors=[];TP=FORM==='sky'?19:15.2;town.clear();lifts=[];HOMES=0;AREA=0;steps=[];capIdx=0;asm=null;say('');let nb=0,nt=0,topMax=0;
   const ps=[...cores].map(k=>P(...k.split(',').map(Number))),C={cx:ps.reduce((m,p)=>m+p.x,0)/ps.length,cz:ps.reduce((m,p)=>m+p.z,0)/ps.length};
   C.dm=Math.max(1,...ps.map(p=>Math.hypot(p.x-C.cx,p.z-C.cz)));C.x0=Math.min(...ps.map(p=>p.x));C.x1=Math.max(...ps.map(p=>p.x));C.z0=Math.min(...ps.map(p=>p.z));C.z1=Math.max(...ps.map(p=>p.z));
   C.rim=[];for(const k of cores){const[i,j]=k.split(',').map(Number);for(const[a,b]of DIRS)if(!cores.has(K(i+a,j+b)))C.rim.push(P(i+a,j+b))}
@@ -441,7 +505,10 @@ function build(){drawRiver();beams=[];mirrors=[];TP=FORM==='sky'?19:15.2;town.cl
   const CT=new Map();for(const k of cores)CT.set(k,1);for(const t of tris)for(const k of t.keys)CT.set(k,Math.max(CT.get(k),t.T));
   for(const k of cores){const[i,j]=k.split(',').map(Number),p=P(i,j),top=tierY(CT.get(k)-1)+3*FH+4;topMax=Math.max(topMax,top);   // 코어
     buildCore(p,top,CT.get(k));cap(-1,'rise','기둥(코어)을 세우는 중 · 엘리베이터·가위 계단이 든 유리 기둥')}
-  if(FORM==='sky'){for(const tr of tris)for(let t=0;t<tr.T;t++){skyTri(tr.pts,t,tr.fi);nt++}}                         // 하늘 대지형: 단마다 흙 판 + 마당 있는 집
+  if(FORM==='sky'){for(const tr of tris)for(let t=0;t<tr.T;t++){                                         // 하늘 대지형도 판 배치를 따름
+    if(FULL||(tr.par+t)%2===0){skyTri(tr.pts,t,tr.fi);nt++}
+    else if(t>0)glassTri(tr.pts,t);                                                                         // 교차: 빈 칸은 투명 유리 정원 판(햇빛이 아래 마당까지)
+    else{const cc={x:tr.cx,z:tr.cz};add(slabGeo(tr.pts,.9,cc,.08),M.lawn,0,0,0,town);for(const q of[0,1,2]){const v=tr.pts[q],x=cc.x+(v.x-cc.x)*.45,z=cc.z+(v.z-cc.z)*.45;add(new THREE.CylinderGeometry(.16,.2,1.8,8),M.trunk,x,.9,z,town);add(new THREE.SphereGeometry(1.8,10,8),M.plant,x,2.8,z,town)}cap(-.5,'drop','땅의 빈 칸에 공원 만드는 중')}}}                         // 하늘 대지형: 단마다 흙 판 + 마당 있는 집
   else if(FORM==='bridge'||FORM==='mixed'){const NFb=LIFE==='comfort'?3:4,seen=new Set(),mix=FORM==='mixed',etop=new Map();
     if(mix)for(const tr of tris){for(let a=0;a<3;a++){const ek=[tr.keys[a],tr.keys[(a+1)%3]].sort().join('|');etop.set(ek,Math.min(etop.has(ek)?etop.get(ek):99,tr.T-1))}}                                          // 다리형: 변마다 건물, 삼각형 안은 중정
     for(const k of cores){const[i,j]=k.split(',').map(Number);for(const[a,b]of[[1,0],[0,1],[-1,1]]){const k2=K(i+a,j+b);if(!cores.has(k2))continue;
@@ -470,7 +537,7 @@ function build(){drawRiver();beams=[];mirrors=[];TP=FORM==='sky'?19:15.2;town.cl
   document.getElementById('count').textContent=`코어 ${cores.size}개 · ${FORM==='bridge'?`다리 건물 ${nb}동 · 중정 ${nt}곳`:FORM==='mixed'?`다리 건물 ${nb}동 · 하늘 대지 ${nt}장`:FORM==='sky'?`하늘 대지 ${nt}장`:`삼각 판 ${nt}장`} · ${HOMES}세대 · 집 면적 약 ${(AREA/10000).toFixed(1)}만㎡${nbr?` · 공중 다리 ${nbr}개`:''} · ${NT}단`;
   const xs=ps.map(p=>p.x),zs=ps.map(p=>p.z),cx=(Math.min(...xs)+Math.max(...xs))/2,cz=(Math.min(...zs)+Math.max(...zs))/2,
     ext=Math.max(Math.max(...xs)-Math.min(...xs),Math.max(...zs)-Math.min(...zs))+60,d=ext*.75+topMax*.5;
-  camera.position.set(cx+d*.55,d*.5,cz+d*.75);controls.target.set(cx,topMax*.35,cz)}
+  camera.position.set(cx+d*.55,d*.5,cz+d*.75);controls.target.set(cx,topMax*.35,cz);SC={cx,cz,ext:ext/2+topMax*.8+40};if(typeof setSun==='function'&&time!=='night')setSun();if(!noBake)bake();saveURL()}
 function addCore(){const ps=[...cores].map(k=>k.split(',').map(Number)),cx=ps.reduce((m,p)=>m+P(...p).x,0)/ps.length,cz=ps.reduce((m,p)=>m+P(...p).z,0)/ps.length,o=[];
   for(const[i,j]of ps)for(const[di,dj]of DIRS){const k=K(i+di,j+dj);if(!cores.has(k)&&!o.includes(k))o.push(k)}
   o.sort((a,b)=>{const pa=P(...a.split(',').map(Number)),pb=P(...b.split(',').map(Number));return Math.hypot(pa.x-cx,pa.z-cz)-Math.hypot(pb.x-cx,pb.z-cz)+(Math.random()-.5)*4});
@@ -487,17 +554,51 @@ document.getElementById('shape').onchange=e=>{SHAPE=e.target.value;const tx=docu
 {let tm=null;document.getElementById('txt').oninput=()=>{clearTimeout(tm);tm=setTimeout(()=>{if(SHAPE==='text'){reset();topView()}},600)}}
 function topView(){const ps=[...cores].map(k=>P(...k.split(',').map(Number))),xs=ps.map(p=>p.x),zs=ps.map(p=>p.z),cx=(Math.min(...xs)+Math.max(...xs))/2,cz=(Math.min(...zs)+Math.max(...zs))/2,
   ext=Math.max(Math.max(...xs)-Math.min(...xs),(Math.max(...zs)-Math.min(...zs))*1.6)+80;camera.position.set(cx,ext*1.05+tierY(NT),cz+.1);controls.target.set(cx,0,cz)}
-document.getElementById('topView').onclick=topView;document.getElementById('size').onchange=e=>{SIZE=+e.target.value;reset()};
+document.getElementById('topView').onclick=topView;
+document.getElementById('shareBtn').onclick=async()=>{saveURL();try{await navigator.clipboard.writeText(location.href);say('링크를 복사했어요 · 보내면 같은 마을이 그대로 열려요')}catch(e){say('주소창의 링크를 복사해 보내 주세요')}setTimeout(()=>{if(!asm)say('')},2500)};document.getElementById('size').onchange=e=>{SIZE=+e.target.value;reset()};
 document.getElementById('height').onchange=e=>{HMODE=e.target.value;build()};
 document.getElementById('life').onchange=e=>{LIFE=e.target.value;build()};
 document.getElementById('form').onchange=e=>{FORM=e.target.value;build()};
+document.getElementById('season').onchange=e=>{season=e.target.value;markG.clear();setSun()};
+document.getElementById('hour').oninput=e=>{hour=+e.target.value;dayAnim=false;setSun()};
+btn('dayPlay',e=>{dayAnim=!dayAnim;e.target.classList.toggle('on',dayAnim);if(dayAnim&&hour>=19)hour=5.5});
+btn('sunCheck',()=>sunCheck());
 btn('liftBtn',e=>{LIFT=!LIFT;e.target.classList.toggle('on',LIFT);e.target.textContent=LIFT?'움직이는 중':'움직이기'});
-btn('asmBtn',()=>{build();startAssembly()});
+btn('asmBtn',()=>{build(true);startAssembly()});
 btn('c1',()=>{addCore();build()});btn('c6',()=>{for(let i=0;i<6;i++)addCore();build()});btn('reset',reset);
 document.querySelectorAll('[data-full]').forEach(b=>b.onclick=()=>{FULL=b.dataset.full==='1';document.querySelectorAll('[data-full]').forEach(x=>x.classList.toggle('on',x===b));build()});
 btn('tMinus',()=>{if(NT>1){NT--;build()}});btn('tPlus',()=>{if(NT<7){NT++;build()}});
+let WINS=[],SC={cx:0,cz:0,ext:200};const LAT=37.5*Math.PI/180,SEASON={eq:0,sum:23.44,win:-23.44};
+let season='eq',hour=14,dayAnim=false;
+function sunDir(h,sea){const d=SEASON[sea]*Math.PI/180,H=(h-12)*15*Math.PI/180;
+  const east=-Math.cos(d)*Math.sin(H),north=Math.sin(d)*Math.cos(LAT)-Math.cos(d)*Math.sin(LAT)*Math.cos(H),up=Math.sin(d)*Math.sin(LAT)+Math.cos(d)*Math.cos(LAT)*Math.cos(H);
+  return new THREE.Vector3(east,up,-north).normalize()}                                                      // 장면: x=동, z=남(북은 −z)
+function setSun(){const v=sunDir(hour,season),alt=Math.asin(Math.max(-1,Math.min(1,v.y))),k=Math.max(0,Math.sin(alt));
+  sun.target.position.set(SC.cx,0,SC.cz);sun.position.set(SC.cx+v.x*500,Math.max(5,v.y*500),SC.cz+v.z*500);
+  const c=sun.shadow.camera,e=SC.ext;c.left=-e;c.right=e;c.top=e;c.bottom=-e;c.near=50;c.far=1200;c.updateProjectionMatrix();
+  if(time!=='night'){sun.intensity=v.y>0?.6+2.2*Math.min(1,k*1.6):0;hemi.intensity=.35+.6*Math.min(1,k*1.8);
+    const warm=v.y>0&&k<.35;sun.color.set(warm?0xffc08a:0xffffff);const sky=v.y<=0?0x3a4a66:warm?0xf0cfa8:0xcfe6f3;scene.background=new THREE.Color(sky);if(scene.fog)scene.fog.color.set(sky)}
+  const hh=Math.floor(hour),mm=Math.round((hour-hh)*60);document.getElementById('hourLbl').textContent=`${hh}:${String(mm).padStart(2,'0')}`}
+const markG=new THREE.Group();scene.add(markG);
+async function sunCheck(){const cp=camera.position.clone(),ct=controls.target.clone();build(true);camera.position.copy(cp);controls.target.copy(ct);markG.clear();if(!WINS.length){say('분석할 창이 없어요');return}
+  town.updateMatrixWorld(true);const ray=new THREE.Raycaster();ray.far=600;ray.camera=camera;const objs=[];town.traverse(o=>{if(o.isMesh&&!(o.material&&o.material.transparent))objs.push(o)});
+  const W=WINS.map(w=>{const p=w.o.localToWorld(new THREE.Vector3(...w.p)),q=w.o.localToWorld(new THREE.Vector3(w.p[0]+w.n[0],w.p[1]+w.n[1],w.p[2]+w.n[2]));return{p,n:q.sub(p).normalize(),pair:w.pair}});
+  const times=[];for(let h=8;h<=16.001;h+=.5)times.push(h);const dirs=times.map(h=>sunDir(h,season));
+  const res=[];for(let i=0;i<W.length;i++){const w=W[i];let tot=0,run=0,best=0;
+    for(let k=0;k<times.length;k++){const d=dirs[k];let lit=false;
+      if(d.y>.02&&d.dot(w.n)>.05){ray.set(w.p.clone().addScaledVector(w.n,.4),d);lit=ray.intersectObjects(objs,false).length===0}
+      if(lit){tot+=.5;if(times[k]>=9&&times[k]<=15){run+=.5;best=Math.max(best,run)}}else run=0}
+    res.push({w,tot,best});if(i%40===39){say(`일조 분석 중… ${i+1}/${W.length}`);await new Promise(r=>setTimeout(r,0))}}
+  // 앞뒤 두 면 창을 가진 집은 더 좋은 쪽으로
+  const homes=[];for(let i=0;i<res.length;i++){const r=res[i];if(r.w.pair&&homes.length){const pv=homes[homes.length-1];if(r.tot>pv.tot){pv.tot=r.tot;pv.best=Math.max(pv.best,r.best);pv.w=r.w}continue}homes.push({...r})}
+  let ok=0,mid=0,bad=0,sum=0;const G=new THREE.SphereGeometry(.7,10,8),MM={ok:new THREE.MeshBasicMaterial({color:0x2e9e5b}),mid:new THREE.MeshBasicMaterial({color:0xf0a830}),bad:new THREE.MeshBasicMaterial({color:0xd2453a})};
+  for(const h of homes){const pass=h.tot>=4||h.best>=2,k=pass?'ok':h.tot>=2?'mid':'bad';if(k==='ok')ok++;else if(k==='mid')mid++;else bad++;sum+=h.tot;
+    const m=new THREE.Mesh(G,MM[k]);m.position.copy(h.w.p).addScaledVector(h.w.n,1.4);markG.add(m)}
+  const nm={eq:'봄·가을',sum:'여름',win:'겨울(동지)'}[season];
+  say(`일조 분석 · ${nm} 8~16시 · 집 ${homes.length}채 · 기준(총 4시간 또는 9~15시 연속 2시간) 충족 ${Math.round(ok/homes.length*100)}%(초록) · 조금 부족 ${mid}(주황) · 부족 ${bad}(빨강) · 평균 ${(sum/homes.length).toFixed(1)}시간`)}
+  bake()
 let time='day';function applyEnv(){const n=time==='night',sky=n?0x0d1828:0xcfe6f3;scene.background=new THREE.Color(sky);scene.fog=new THREE.Fog(sky,1200,3000);
-  sun.position.set(-90,170,120);sun.intensity=n?.25:2.4;hemi.intensity=n?.2:.95;M.win.emissiveIntensity=n?1.5:0;if(typeof beams!=='undefined')beams.forEach(b=>b.visible=!n)}
+  if(n){sun.intensity=.25;hemi.intensity=.2}else setSun();M.win.emissiveIntensity=n?1.5:0;if(typeof beams!=='undefined')beams.forEach(b=>b.visible=!n)}
 document.querySelectorAll('[data-time]').forEach(b=>b.onclick=()=>{time=b.dataset.time;document.querySelectorAll('[data-time]').forEach(x=>x.classList.toggle('on',x===b));applyEnv()});
 /* 땅(지진 때 크게 흔들림): 바닥 + 도로 + 둘레 나무 · 마을(코어 밑 면진 받침 위)은 훨씬 덜 흔들림 */
 const groundG=new THREE.Group();scene.add(groundG);const riverG=new THREE.Group();groundG.add(riverG);
@@ -518,7 +619,7 @@ let quake=false,qt=0;
 document.getElementById('quakeBtn').onclick=e=>{quake=!quake;qt=0;e.target.classList.toggle('on',quake);e.target.textContent=quake?'지진 멈추기':'지진 발생';
   say(quake?'지진 발생 · 땅은 크게 흔들리지만, 코어 밑 면진 받침과 삼각 그물 짜임 덕에 마을은 훨씬 덜 흔들려요':'');if(!quake){groundG.position.set(0,0,0);town.position.set(0,0,0);town.rotation.set(0,0,0)}};
 function resize(){const w=view.clientWidth,h=view.clientHeight;if(!w||!h)return;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix()}
-new ResizeObserver(resize).observe(view);resize();reset();applyEnv();
+new ResizeObserver(resize).observe(view);resize();loadURL();reset();applyEnv();if(SHAPE==='text')topView();
 function startAssembly(){if(!steps.length)return;const list=steps.slice().sort((a,b)=>a.order-b.order);
   const nBox=list.filter(s=>s.order>=0&&s.order%2>=1&&s.kind==='drop').length,gap=Math.min(.12,30/Math.max(1,nBox));let t=0,prev=null;
   for(const s of list){const core=s.kind==='rise',slab=s.order>=0&&Math.floor(s.order)%2===0&&s.kind==='drop';
@@ -532,10 +633,11 @@ function updateAssembly(dt){if(!asm)return;asm.t+=dt;let cur=null;
       if(s.kind==='rise')o.scale.y=Math.max(.001,e);else if(s.kind==='drop')o.position.y=o.userData.by+14*(1-e);else o.scale.setScalar(Math.max(.001,e))}
     if(asm.t>s.start&&k<1&&(!cur||s.order>=cur.order))cur=s}
   if(cur)say(cur.label);
-  if(asm.t>asm.end){for(const s of asm.list)for(const o of s.objs){o.visible=true;o.position.y=o.userData.by;o.scale.set(1,1,1)}asm=null;say('조립 완료!');setTimeout(()=>{if(!asm)say('')},2000);document.getElementById('asmBtn').classList.remove('on')}}
+  if(asm.t>asm.end){for(const s of asm.list)for(const o of s.objs){o.visible=true;o.position.y=o.userData.by;o.scale.set(1,1,1)}asm=null;bake();say('조립 완료!');setTimeout(()=>{if(!asm)say('')},2000);document.getElementById('asmBtn').classList.remove('on')}}
 const clock=new THREE.Clock();
 (function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05);
   if(LIFT)for(const l of lifts){if(l.wait>0){l.wait-=dt;continue}l.y+=l.dir*l.sp*dt;if(l.y>l.y1){l.y=l.y1;l.dir=-1;l.wait=1.5}if(l.y<l.y0){l.y=l.y0;l.dir=1;l.wait=1.5}l.m.position.y=l.y+1.15}
+  if(dayAnim){hour+=dt*1.2;if(hour>19.5){hour=19.5;dayAnim=false;document.getElementById('dayPlay').classList.remove('on')}document.getElementById('hour').value=hour;setSun()}
   if(quake){qt+=dt;const gx=.9*Math.sin(qt*11)+.5*Math.sin(qt*17.3),gz=.6*Math.sin(qt*9.1+1);groundG.position.set(gx,0,gz);   // 땅: 크게
     town.position.set(gx*.15+.12*Math.sin(qt*2.1),0,gz*.15+.08*Math.sin(qt*1.7));town.rotation.z=.002*Math.sin(qt*2.1);town.rotation.x=.0015*Math.sin(qt*1.7)}   // 마을: 15%만, 천천히
   updateAssembly(dt);controls.update();renderer.render(scene,camera)})();
