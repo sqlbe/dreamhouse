@@ -514,7 +514,7 @@ function build(noBake){WINS=[];if(typeof markG!=='undefined')markG.clear();drawR
     for(const k of cores){const[i,j]=k.split(',').map(Number);for(const[a,b]of[[1,0],[0,1],[-1,1]]){const k2=K(i+a,j+b);if(!cores.has(k2))continue;
       const ek=[k,k2].sort().join('|'),tt=mix?Math.min(CT.get(k),CT.get(k2),etop.has(ek)?etop.get(ek):99):Math.min(CT.get(k),CT.get(k2));for(let t=0;t<tt;t++){if(!FULL&&(t+i+j)%2)continue;buildBar(P(i,j),P(i+a,j+b),t,NFb,t===tt-1||LIFE==='comfort',i*3+j+a+t);nb++}}}
     let ncourt=0;for(const tr of tris)for(let t=1;t<(mix?tr.T-1:tr.T);t++){glassCourt(tr.pts,t);ncourt++}           // 빈 삼각 안쪽: 투명 판넬 쉼터
-    if(mix)for(const tr of tris){skyTri(tr.pts,tr.T-1,tr.fi);nt++}                                              // 혼합형: 맨 위 단 = 하늘 대지 단독주택 마을
+    if(mix)for(const tr of tris){const t=tr.T-1;if(FULL||(tr.par+t)%2===0){skyTri(tr.pts,t,tr.fi);nt++}else if(t>0)glassTri(tr.pts,t)}   // 맨 위 하늘 대지도 판 배치를 따름(교차: 빈 칸은 유리 정원 판)                                              // 혼합형: 맨 위 단 = 하늘 대지 단독주택 마을
     for(const tr of tris){if(mix&&tr.T===1)continue;const cc={x:tr.cx,z:tr.cz};add(slabGeo(tr.pts,.62,cc,.08),M.lawn,0,0,0,town);       // 땅의 중정 = 정원
       for(const q of[0,1,2]){const v=tr.pts[q],x=cc.x+(v.x-cc.x)*.3,z=cc.z+(v.z-cc.z)*.3;add(new THREE.CylinderGeometry(.16,.2,1.8,8),M.trunk,x,.9,z,town);add(new THREE.SphereGeometry(1.8,10,8),M.plant,x,2.8,z,town)}
       if(!mix)nt++;cap(-.5,'drop','삼각 중정에 정원 만드는 중')}}
