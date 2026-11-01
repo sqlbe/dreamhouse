@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>조립식 다리 키트</title>
+<style>
+:root{--bg:#f6f8fa;--ink:#22303c;--sub:#6b7785;--line:#dbe2e8;--acc:#2f6f9f}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif}
+body{display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 16px;background:#fff;border-bottom:1px solid var(--line)}
+h1{font-size:18px;margin:0}.sub{color:var(--sub);font-size:12px}
+button,select{font:inherit;font-size:12px;padding:6px 10px;border:1px solid var(--line);background:#fff;border-radius:8px;color:var(--ink);cursor:pointer}
+button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+main{flex:1;min-height:0;position:relative;overflow:hidden}main canvas{display:block}
+.ctl{position:absolute;left:12px;bottom:12px;background:rgba(255,255,255,.95);border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:6px;max-width:calc(100% - 24px)}
+.row{display:flex;gap:5px;align-items:center;flex-wrap:wrap}.lbl{font-size:11px;color:var(--sub);width:58px}.num{font-weight:700;font-size:12px;color:var(--acc);min-width:44px}
+.bom{position:absolute;right:12px;top:12px;width:330px;max-height:calc(100% - 24px);overflow:auto;background:rgba(255,255,255,.95);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:12px}
+.bom h3{margin:0 0 6px;font-size:14px;color:var(--acc)}.bom table{width:100%;border-collapse:collapse}.bom td,.bom th{border-bottom:1px solid var(--line);padding:4px 3px;text-align:left;vertical-align:top}
+.bom th{color:var(--sub);font-weight:600}.sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.bom .tot{font-weight:700;color:var(--ink)}.bom p{margin:6px 0;color:var(--sub);line-height:1.6}
+.cap{position:absolute;left:50%;top:14px;transform:translateX(-50%);background:rgba(34,48,60,.86);color:#fff;padding:7px 14px;border-radius:20px;font-size:13px;display:none;max-width:70%;text-align:center}
+body.ui-off .ctl,body.ui-off .bom{display:none}
+@media(max-width:900px){.sub{display:none}.bom{width:260px;max-height:45%}.ctl{left:8px;right:8px;bottom:8px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>조립식 다리 키트</h1>
+  <span class="sub">표준 부품 8가지(말뚝 · 교각 토막 · 교각 머리 · 받침 · 트러스 칸 · 바닥 패널 · 집 모듈 · 강변 받침)로 강 폭에 맞춰 자동 조립 · 프로토타입 1차</span>
+  <button id="uiToggle">☰ 메뉴</button>
+</header>
+<main id="view">
+  <div class="cap" id="cap"></div>
+  <div class="bom" id="bom"></div>
+  <div class="ctl">
+    <div class="row"><span class="lbl">강 폭</span><input id="riverW" type="range" min="60" max="200" step="10" value="100" style="width:130px"><span class="num" id="riverWv"></span></div>
+    <div class="row"><span class="lbl">경간</span><select id="span"><option value="20">20m (교각 많음 · 트러스 가벼움)</option><option value="30" selected>30m (표준)</option><option value="40">40m (교각 적음 · 트러스 보강)</option></select></div>
+    <div class="row"><span class="lbl">다리 폭</span><select id="lanes"><option value="2">2칸 = 24m</option><option value="3" selected>3칸 = 36m</option><option value="4">4칸 = 48m</option></select>
+      <span class="lbl" style="width:auto">집 모듈</span><select id="split"><option value="1" selected>3m 반쪽 × 2 (도로 운반 가능)</option><option value="0">6m 통째 (도로 폭 초과)</option></select></div>
+    <div class="row"><span class="lbl">집 층수</span><select id="floors"><option value="0">없음(다리만)</option><option value="2">2층</option><option value="3" selected>3층</option><option value="4">4층 (최대)</option></select></div>
+    <div class="row"><span class="lbl">보기</span><select id="colorSel"><option value="real">실제 색</option><option value="part">부품별 색</option><option value="haul">운반 방식별 색</option></select><button id="explodeBtn">분해 보기</button><button id="asmBtn">조립 보기</button><button id="haulBtn">운반 보기</button></div>
+    <div class="row"><span class="lbl">시점</span><button data-view="home">전체</button><button data-view="side">옆에서</button><button data-view="under">다리 밑</button><button data-time="day" class="on">낮</button><button data-time="night">밤</button></div>
+  </div>
+</main>
+<script>
+const uiBtn=document.getElementById('uiToggle');
+function setUI(on){document.body.classList.toggle('ui-off',!on);uiBtn.classList.toggle('on',on);uiBtn.textContent=on?'☰ 메뉴 숨기기':'☰ 메뉴 보기'}
+setUI(!(matchMedia('(max-width: 768px)').matches||matchMedia('(pointer: coarse)').matches));uiBtn.onclick=()=>setUI(document.body.classList.contains('ui-off'));
+</script>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+const view=document.getElementById('view'),capEl=document.getElementById('cap');
+const renderer=new THREE.WebGLRenderer({antialias:true,logarithmicDepthBuffer:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;
+renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;view.prepend(renderer.domElement);
+const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(42,1,.5,3000);
+const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.maxPolarAngle=Math.PI*.495;
+const hemi=new THREE.HemisphereLight(0xffffff,0x9aa08c,.95);scene.add(hemi);
+const sun=new THREE.DirectionalLight(0xffffff,2.4);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.bias=-.0006;sun.shadow.normalBias=.04;
+Object.assign(sun.shadow.camera,{left:-180,right:180,top:180,bottom:-180,near:10,far:900});scene.add(sun,sun.target);
+const std=(c,o={})=>new THREE.MeshStandardMaterial({color:c,roughness:.8,...o});
+function add(geo,mat,x,y,z,p=scene,sh=true){const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);if(sh){m.castShadow=m.receiveShadow=true}p.add(m);return m}
+const box3=(x1,x2,y1,y2,z1,z2,mat,p)=>add(new THREE.BoxGeometry(Math.abs(x2-x1),Math.abs(y2-y1),Math.abs(z2-z1)),mat,(x1+x2)/2,(y1+y2)/2,(z1+z2)/2,p);
+const glass=new THREE.MeshPhysicalMaterial({color:0xcfeaf7,transparent:true,opacity:.3,roughness:.05,side:THREE.DoubleSide,depthWrite:false});
+const M={ground:std(0xdfe4da),bank:std(0xbfb8aa),levee:std(0x9fb88a),bed:std(0x8f8676),lawn:std(0x86b35f),plant:std(0x6aa34f),trunk:std(0x5b3a24),white:std(0xf2f3f5,{roughness:.5}),
+  water:new THREE.MeshStandardMaterial({color:0x5f9bbf,roughness:.15,metalness:.2,transparent:true,opacity:.75,depthWrite:false}),
+  win:new THREE.MeshStandardMaterial({color:0x9fc4dc,roughness:.15,metalness:.3,emissive:0xffcf8a,emissiveIntensity:0})};
+/* 부품 종류: 실제 색 / 부품 색 · 어림 무게(t) · 설명 */
+const PART={
+  pile:{n:'강관 말뚝',d:'지름 1.2m · 길이 25m 강관(강바닥 아래)',w:15,real:0x6f7377,code:0x7d3c98},
+  seg:{n:'교각 토막',d:'속 빈 유선형 콘크리트 2.5m 높이 토막(쌓아서 높이 조절)',w:120,real:0xd9d4ca,code:0xe67e22},
+  cap:{n:'교각 머리',d:'다리 폭 전체를 받치는 프리캐스트 보',w:220,real:0xcfc9bd,code:0xc0392b},
+  brg:{n:'면진 받침',d:'고무+납 받침 1.2m × 1.2m',w:2,src:'road',real:0x2e2e2e,code:0x111111},
+  truss:{n:'통째 트러스',d:'교각 사이 한 칸 전체 × 폭 12m × 높이 5m 와렌 트러스(공장 용접, 해상 크레인으로 한 번에 거치)',w:150,real:0x4f5b66,code:0x2f6f9f},
+  deck:{n:'바닥 패널',d:'10m × 4m × 0.3m 프리캐스트(배관·전선 홈 포함)',w:30,src:'road',real:0xd6cfc2,code:0x95a5a6},
+  house:{n:'집 모듈',d:'',w:14,src:'road',real:0xe6dccd,code:0x27ae60},
+  abut:{n:'강변 받침 셀',d:'속 빈 상자 블록(현장에서 안을 자갈로 채움) · 2단으로 쌓음',w:200,real:0xbfb3a0,code:0x8e44ad},
+  elev:{n:'엘리베이터 토막',d:'한 층 높이(3.25m) 유리 승강로 토막 · 레일·문 포함 · 층마다 하나씩 쌓고 맨 위는 기계실 일체형',w:6,src:'road',real:0xdfe7ec,code:0x16a085},
+  stair:{n:'강변 계단',d:'둑에서 다리 위로 오르는 프리캐스트 계단 한 덩어리',w:60,real:0xc9bfae,code:0xd35400}};
+/* 운반 방식: 0 일반 트럭 · 1 특수 허가 트럭 · 2 바지선 · 3 운반 불가 (src:'road' = 내륙 공장에서 도로로만 올 수 있는 부품) */
+const HAUL=[{n:'일반 트럭',c:0x27ae60},{n:'특수 허가 트럭',c:0xf0a830},{n:'바지선',c:0x2f6f9f},{n:'❌ 운반 불가',c:0xd0392b}];
+function haulOf(d,w,src){const[a,b,c]=[...d].sort((x,y)=>y-x);if(a<=16&&b<=2.5&&c<=3&&w<=25)return 0;if(a<=30&&b<=4&&c<=3.5&&w<=80)return 1;return src==='road'||w>1000?3:2}
+const MAT={};for(const k in PART)MAT[k]=std(PART[k].real,{roughness:.6,metalness:k==='truss'||k==='pile'?.5:.05});
+const CODEM={};for(const k in PART)CODEM[k]=std(PART[k].code,{roughness:.5});
+const HAULM=HAUL.map(h=>std(h.c,{roughness:.5}));let HAULT={};   // 부품 종류 → 운반 방식
+const SKIN=[0xc9a27a,0xf1ede6,0xb98b62,0xe6dccd].map(c=>std(c,{roughness:.7}));
+/* 통째 트러스: 교각 사이 한 칸 전체를 한 덩어리로(같은 길이는 모양 공유) · 와렌(/\/\) · 굵은 상자형 위·아래 보 · 가로보 촘촘 */
+const TRUSS_C={};
+function trussGeo(len){len=Math.round(len*100)/100;if(TRUSS_C[len])return TRUSS_C[len];const P=[],V=(x,y,z)=>new THREE.Vector3(x,y,z),UPV=V(0,1,0);
+  const bar=(a,b,t)=>{const d=b.clone().sub(a),L=d.length(),g=new THREE.BoxGeometry(t,L,t);g.translate(0,L/2,0);g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(UPV,d.normalize()));g.translate(a.x,a.y,a.z);P.push(g.toNonIndexed())};
+  const D=5,hl=len/2,n=Math.max(4,2*Math.round(len/8)),pw=len/n,yb=.45,yt=D-.45;
+  for(const z of[-5.6,5.6]){bar(V(-hl,yb,z),V(hl,yb,z),.9);bar(V(-hl,yt,z),V(hl,yt,z),.9);                // 아래·위 보(0.9m 상자형)
+    for(const x of[-hl,hl])bar(V(x,yb,z),V(x,yt,z),.8);                                                    // 끝 기둥
+    for(let i=0;i<n;i++){const x0=-hl+i*pw,xm=x0+pw/2,x1=x0+pw;bar(V(x0,yb,z),V(xm,yt,z),.55);bar(V(xm,yt,z),V(x1,yb,z),.55);bar(V(xm,yb,z),V(xm,yt,z),.3)}}   // 와렌 대각선 · 보조 수직재
+  for(let i=0;i<=n;i++){const x=-hl+i*pw;bar(V(x,yb,-5.6),V(x,yb,5.6),.6);bar(V(x,yt,-5.6),V(x,yt,5.6),.45);if(i<n){bar(V(x+pw/2,yt,-5.6),V(x+pw/2,yt,5.6),.45);bar(V(x,yb,-5.6),V(x+pw,yb,5.6),.22);bar(V(x,yb,5.6),V(x+pw,yb,-5.6),.22)}}   // 가로보 · 아래 X 가새
+  return TRUSS_C[len]=mergeGeometries(P)}
+/* 집 모듈 모양(1층분) */
+const HOUSE=(()=>{const P={skin:[],win:[],trim:[]},B=(x1,x2,y1,y2,z1,z2,k)=>{const g=new THREE.BoxGeometry(x2-x1,y2-y1,z2-z1);g.translate((x1+x2)/2,(y1+y2)/2,(z1+z2)/2);P[k].push(g)};
+  B(-4.5,4.5,0,3.1,-3,3,'skin');for(const z of[-3,3])B(-3.8,3.8,.8,2.4,Math.min(z,z*1.02),Math.max(z,z*1.02),'win');B(-4.55,4.55,3.05,3.2,-3.05,3.05,'trim');
+  const o={};for(const k in P)o[k]=mergeGeometries(P[k]);return o})();
+
+/* 집 반쪽 모듈(폭 3m · 창은 +z 쪽 한 면): 두 개를 현장에서 붙여 한 세대 */
+const HALF=(()=>{const P={skin:[],win:[],trim:[]},B=(x1,x2,y1,y2,z1,z2,k)=>{const g=new THREE.BoxGeometry(x2-x1,y2-y1,z2-z1);g.translate((x1+x2)/2,(y1+y2)/2,(z1+z2)/2);P[k].push(g)};
+  B(-4.5,4.5,0,3.1,-1.47,1.47,'skin');B(-3.8,3.8,.8,2.4,1.47,1.52,'win');B(-4.55,4.55,3.05,3.2,-1.5,1.5,'trim');B(-4.55,-4.45,0,3.1,-1.5,1.5,'trim');
+  const o={};for(const k in P)o[k]=mergeGeometries(P[k]);return o})();
+/* 엘리베이터 토막(2.6m × 2.6m × 3.25m): 유리 승강로 + 네 모서리 철골 + 층 테두리 */
+const ELEV=(()=>{const P={glass:[],frame:[]},B=(x1,x2,y1,y2,z1,z2,k)=>{const g=new THREE.BoxGeometry(x2-x1,y2-y1,z2-z1);g.translate((x1+x2)/2,(y1+y2)/2,(z1+z2)/2);P[k].push(g)};
+  B(-1.2,1.2,0,3.25,-1.2,1.2,'glass');for(const x of[-1.3,1.1])for(const z of[-1.3,1.1])B(x,x+.2,0,3.25,z,z+.2,'frame');B(-1.3,1.3,0,.2,-1.3,1.3,'frame');B(-1.3,1.3,3.05,3.25,-1.3,1.3,'frame');
+  const o={};for(const k in P)o[k]=mergeGeometries(P[k]);return o})();
+const elevGlass=new THREE.MeshPhysicalMaterial({color:0xcfeaf7,transparent:true,opacity:.35,roughness:.05,depthWrite:false});
+const cabG=new THREE.Group();scene.add(cabG);let cabs=[];
+/* 땅 · 강 */
+let RW=100,SPAN=30,LANES=3,FL=3,SPLIT=true,colorMode='real',haulOn=false,explode=0,explodeT=0;
+const world=new THREE.Group(),kit=new THREE.Group();scene.add(world,kit);
+let parts=[];   // {o,type,order,base}
+function tree(x,y,z,s=1,p=world){add(new THREE.CylinderGeometry(.14*s,.2*s,1.8*s,8),M.trunk,x,y+.9*s,z,p);add(new THREE.SphereGeometry(1.3*s,10,8),M.plant,x,y+2.6*s,z,p)}
+function part(type,o,order){o.userData.type=type;o.userData.base=o.position.clone();o.traverse(m=>{if(m.isMesh&&m.userData.code!==false){m.userData.real=m.material}});kit.add(o);parts.push({o,type,order});return o}
+function mesh(type,geo,x,y,z,order,mat){const m=new THREE.Mesh(geo,mat||MAT[type]);m.position.set(x,y,z);m.castShadow=m.receiveShadow=true;return part(type,m,order)}
+function build(){world.clear();kit.clear();parts=[];cabG.clear();cabs=[];
+  const H=RW/2,BW=LANES*12,HW=BW/2,LOW=12,UP=LOW+4;
+  for(const sx of[-1,1])add(new THREE.PlaneGeometry(1000,1200).rotateX(-Math.PI/2),M.ground,sx*(H+500),-.01,0,world).castShadow=false;
+  box3(-H,H,-10,-8,-600,600,M.bed,world);for(const sx of[-1,1]){box3(sx>0?H:-H-14,sx>0?H+14:-H,-10,3,-600,600,M.bank,world);box3(sx>0?H+14:-H-34,sx>0?H+34:-H-14,0,3,-600,600,M.levee,world);for(let z=-280;z<=280;z+=24)tree(sx*(H+24),3,z,1.1)}
+  const w=add(new THREE.BoxGeometry(2*H,1,1200),M.water,0,-4.5,0,world);w.castShadow=false;
+  // 받침 위치: 양 끝 강변 받침 + 강 안 교각(경간마다)
+  const L=RW+40,x0=-L/2,nMod=Math.ceil(L/10),Lr=nMod*10,xs=-Lr/2;
+  const nSp=Math.max(2,Math.round(Lr/SPAN)),sp=Lr/nSp,sup=[];for(let k=1;k<nSp;k++)sup.push(-Lr/2+k*sp);   // 양 끝 받침 사이에 고른 간격
+  // ① 말뚝 · ② 교각 토막 · ③ 교각 머리 · ④ 받침
+  const pierLen=BW-4,segH=2.5;
+  sup.forEach((x,pi)=>{const gb=Math.abs(x)<H?-8:Math.abs(x)<H+34?3:0,nSeg=Math.ceil((LOW-3.2-gb)/segH);   // 강 안은 강바닥, 둑 위는 둑 높이부터
+    for(let i=0;i<6;i++){const z=-pierLen/2+1.5+i*(pierLen-3)/5;for(const dx of[-1.6,1.6])mesh('pile',new THREE.CylinderGeometry(.6,.6,25,12),x+dx,gb-12.5,z,0)}
+    for(let s=0;s<nSeg;s++){const y0=gb+s*segH,h=Math.min(segH,(LOW-3.2)-y0);if(h<=0)break;const g=new THREE.CylinderGeometry(1,1,h-.06,32);const m=mesh('seg',g,x,y0+h/2,0,1+s*.01,s%2?MAT.seg:std(0xe2ddd3,{roughness:.6}));m.scale.set(2.6,1,pierLen/2);m.userData.base=m.position.clone()}
+    mesh('cap',new THREE.BoxGeometry(6,1.6,BW+1),x,LOW-2.4,0,2);
+    for(let i=0;i<=LANES*2;i++)mesh('brg',new THREE.BoxGeometry(1.2,.6,1.2),x,LOW-1.3,-HW+1+i*(BW-2)/(LANES*2),3)});
+  // ⑧ 강변 받침 블록 + 계단
+  const nCell=Math.ceil(BW/9),cw=BW/nCell,ch=(LOW-1)/2;PART.abut.w=Math.round(2*(12+cw)*.35*ch*2.5);
+  for(const sx of[-1,1]){const xe=sx*(Lr/2)+sx*6;
+    for(let t=0;t<2;t++)for(let c=0;c<nCell;c++){const g=new THREE.Group();g.position.set(xe,t*ch,-HW+cw*(c+.5));box3(-6,6,0,ch-.04,-cw/2+.02,cw/2-.02,MAT.abut,g);part('abut',g,1.5+t*.1)}
+    const g=new THREE.Group();g.position.set(xe+sx*6,0,0);for(let k=0;k<20;k++)box3(sx*k*.5,sx*(k+1)*.5,0,LOW-1-k*(LOW-1-3)/20,-4,4,MAT.stair,g);part('stair',g,1.7)}
+  // ⑤ 통째 트러스: 받침 사이 한 칸 전체를 한 덩어리로(양 끝은 강변 블록 위에 1.2m 걸침)
+  const pts=[-Lr/2-1.5,...sup,Lr/2+1.5];PART.truss.w=Math.round(sp*12*.45);
+  for(let k=0;k+1<pts.length;k++){const a=pts[k]+.3,b=pts[k+1]-.3;for(let j=0;j<LANES;j++)mesh('truss',trussGeo(b-a),(a+b)/2,LOW-1,-HW+6+j*12,4+k*.01)}
+  // ⑥ 바닥 패널 (10m × 4m)
+  for(let i=0;i<nMod;i++)for(let j=0;j<LANES*3;j++)mesh('deck',new THREE.BoxGeometry(9.96,.3,3.96),xs+5+i*10,UP+.15,-HW+2+j*4,5+i*.001);
+  // ⑦ 집 모듈: 양쪽 가장자리에 2칸 묶음, 묶음 사이 10m 틈(빛 골목) · 가운데는 산책로
+  PART.house.d=SPLIT?'9m × 3m × 3.2m 반쪽 집 · 현장에서 두 개를 붙여 한 세대(54㎡)':'9m × 6m × 3.2m 통째 집 한 세대(54㎡)';PART.house.w=SPLIT?14:28;
+  let nh=0;if(FL>0)for(let i=0;i+1<nMod;i+=3)for(const sz of[-1,1])for(let f=0;f<FL;f++){for(let k=0;k<2;k++){nh++;for(const o of SPLIT?[-1.5,1.5]:[0]){const g=new THREE.Group(),T=SPLIT?HALF:HOUSE;g.position.set(xs+5+(i+k)*10,UP+.35+f*3.25,sz*(HW-3.5)+o);g.rotation.y=(SPLIT?o>0:sz>0)?0:Math.PI;
+    for(const key in T){const m=new THREE.Mesh(T[key],key==='skin'?SKIN[(i+f+k)%4]:key==='win'?M.win:M.white);m.castShadow=m.receiveShadow=true;if(key!=='skin')m.userData.code=false;g.add(m)}part('house',g,6+f*.1+i*.001)}}
+    {const g=new THREE.Group();g.position.set(xs+10+i*10,UP+.35+f*3.25,sz*(HW-6.5-1.4));const fr=new THREE.Mesh(ELEV.frame,MAT.elev);fr.castShadow=fr.receiveShadow=true;g.add(fr);
+      const gl=new THREE.Mesh(ELEV.glass,elevGlass);gl.userData.code=false;g.add(gl);
+      if(f===FL-1){const mr=new THREE.Mesh(new THREE.BoxGeometry(2.8,1.6,2.8),MAT.elev);mr.position.y=4.05;mr.castShadow=true;g.add(mr)}   // 맨 위 기계실
+      part('elev',g,6+f*.1+i*.001+.0005);
+      if(f===0){const c=new THREE.Mesh(new THREE.BoxGeometry(2,2.4,2),std(0xf7f2e6,{roughness:.4}));c.position.set(g.position.x,0,g.position.z);cabG.add(c);cabs.push({m:c,y0:UP+.55,top:UP+.55+(FL-1)*3.25,t:Math.random()*20})}}}
+  // 산책로 장식(키트 아님)
+  {const g=new THREE.Group();for(let x=xs+12;x<-xs-8;x+=14)tree(x,UP+.35,(x/14)%2?-2:2,.9,g);   // 산책로 나무·유리 난간: 바닥을 다 깐 다음에 등장
+    for(const z of[-HW,HW])box3(xs,-xs,UP+.35,UP+1.4,z-.03,z+.03,glass,g).castShadow=false;g.traverse(m=>{if(m.isMesh)m.userData.code=false});part('deco',g,5.5)}
+  const DIM={pile:[25,1.2,1.2],seg:[5.2,pierLen,2.5],cap:[6,BW+1,1.6],brg:[1.2,1.2,.6],truss:[sp,12,5],deck:[10,4,.3],house:SPLIT?[9,3,3.2]:[9,6,3.2],abut:[12,cw,ch],stair:[10,8,8],elev:[2.6,2.6,3.25]};
+  HAULT={};for(const k in PART)HAULT[k]=haulOf(DIM[k],PART[k].w,PART[k].src);
+  buildHaul(H,Lr,HW,sp,sup,LOW);
+  applyColor();
+  // 부품 목록(BOM) · 무게 · 공사 기간
+  const cnt={};for(const p of parts)cnt[p.type]=(cnt[p.type]||0)+1;
+  let rows='',tw=0;for(const k in PART){if(!cnt[k])continue;const t=cnt[k]*PART[k].w;tw+=t;rows+=`<tr><td><span class="sw" style="background:#${PART[k].code.toString(16).padStart(6,'0')}"></span>${PART[k].n}<br><span style="color:#6b7785">${PART[k].d}</span></td><td>${cnt[k]}개</td><td>${PART[k].w}t</td><td>${t.toLocaleString()}t</td></tr>`}
+  let hrows='';for(const k in PART){if(!cnt[k])continue;const m=HAULT[k],w=PART[k].w,per=m===0?Math.max(1,Math.floor(25/w)):m===1?(k==='house'?1:Math.max(1,Math.floor(80/w))):m===2?(k==='truss'?2:Math.max(1,Math.floor(1000/w))):0;
+    hrows+=`<tr${m===3?' style="background:#fdecea"':''}><td>${PART[k].n}</td><td>${DIM[k].map(v=>+v.toFixed(1)).join('×')}</td><td>${w}t</td><td><span class="sw" style="background:#${HAUL[m].c.toString(16).padStart(6,'0')}"></span>${HAUL[m].n}</td><td>${per?Math.ceil(cnt[k]/per)+'번':'—'}</td></tr>`}
+  const bad=Object.keys(PART).filter(k=>cnt[k]&&HAULT[k]===3).map(k=>PART[k].n);
+  const wk=Math.ceil(sup.length*3+ (cnt.truss||0)/3/5+(cnt.deck||0)/40/5+(cnt.house||0)/16/5+4);
+  document.getElementById('bom').innerHTML=`<h3>부품 목록 · 무게 · 공사 기간 (어림)</h3>
+    <p>다리 길이 ${Lr}m · 폭 ${BW}m · 교각 ${sup.length}개(경간 ${sp.toFixed(1)}m) · 집 ${nh}세대(54㎡ · 집 모듈 ${cnt.house||0}개)</p>
+    <table><tr><th>부품</th><th>수량</th><th>개당</th><th>합계</th></tr>${rows}<tr class="tot"><td>합계</td><td></td><td></td><td>${tw.toLocaleString()}t</td></tr></table>
+    <p><b>공사 기간 어림 약 ${wk}주</b>: 교각 하나 3주(말뚝·토막 쌓기) · 트러스 하루 3덩어리(해상 크레인) · 바닥 하루 40장 · 집 하루 16모듈 · 마감 4주</p>
+    <p>모든 부품은 트럭(바닥 패널·집·말뚝·받침) 또는 바지선(통째 트러스 약 ${PART.truss.w}t·교각 토막·교각 머리·강변 셀 — 1,000t급 해상 크레인이면 충분)으로 운반되는 크기로 정함. 같은 키트를 강 폭에 맞춰 칸 수만 바꿔 반복 생산.</p>
+    <h3 style="margin-top:12px">운반 판정</h3>
+    <table><tr><th>부품</th><th>크기(m)</th><th>무게</th><th>운반</th><th>횟수</th></tr>${hrows}</table>
+    <p>기준(어림): 일반 트럭 = 길이 16m · 폭 2.5m · 높이 3m · 25t 이하 / 특수 허가 트럭 = 길이 30m · 폭 4m · 높이 3.5m · 80t 이하 / 그보다 크면 강변 제작장에서 바지선(1,000t급 해상 크레인). 집·바닥 패널·받침은 내륙 공장에서 만들어 <b>도로로만</b> 옴.</p>
+    ${bad.length?`<p style="color:#c0392b;font-weight:700">⚠️ ${bad.join(', ')}: 도로 운반 한도 초과 → 쪼개야 함 (집 모듈을 "3m 반쪽 × 2"로 바꿔 보세요)</p>`:'<p style="color:#27ae60;font-weight:700">✓ 모든 부품이 트럭 또는 바지선으로 운반 가능</p>'}
+    <p style="color:#c0392b">무게·기간은 프로토타입 어림값이며 실제 설계는 구조 계산과 현장 조사가 필요합니다.</p>`;
+  document.getElementById('riverWv').textContent=RW+'m';
+  views.home=[[Lr*.7+60,70,Lr*.8+80],[0,8,0]];views.side=[[0,14,Lr*.8+60],[0,8,0]];views.under=[[Lr*.25,-1,40],[0,6,0]];views.haul=[[Lr*.55+90,70,-HW-170],[0,4,-HW-70]];setView('home')}
+function applyColor(){for(const p of parts)if(CODEM[p.type])p.o.traverse(m=>{if(m.isMesh&&m.userData.code!==false&&m.userData.real)m.material=colorMode==='part'?CODEM[p.type]:colorMode==='haul'?HAULM[HAULT[p.type]]:m.userData.real})}
+/* 운반 장면: 둑 뒤 도로로 트럭(집·바닥 패널·받침) · 강으로 바지선(통째 트러스) · 다리 옆 해상 크레인 */
+const haul=new THREE.Group();scene.add(haul);haul.visible=false;let trucks=[],barges=[];
+function buildHaul(H,Lr,HW,sp,sup,LOW){haul.clear();trucks=[];barges=[];const roadM=std(0x6b6f74),cabM=std(0xf2f3f5,{roughness:.4}),bedM=std(0x3a3f45),bargeM=std(0x8a5a3c),craneM=std(0xf0a830,{roughness:.5});
+  for(const sx of[-1,1]){const rx=sx*(Lr/2+22);box3(rx-4,rx+4,0,.08,-600,-HW-6,roadM,haul);
+    for(let k=0;k<4;k++){const g=new THREE.Group();g.position.set(rx-sx*1.8,0,0);box3(-1.25,1.25,.6,3.4,-1.5,1.5,cabM,g);box3(-1.25,1.25,.6,1.4,-15,-1.6,bedM,g);
+      const ty=['house','deck','brg','house'][k],d=ty==='house'?(SPLIT?[3,3.2,9]:[6,3.2,9]):ty==='deck'?[4,.6,10]:[2.4,1.2,2.4];
+      box3(-d[0]/2,d[0]/2,1.4,1.4+d[1],-8.3-d[2]/2,-8.3+d[2]/2,HAULM[HAULT[ty]],g);haul.add(g);trucks.push({o:g,z:-100-k*130,v:14})}}
+  for(let k=0;k<2;k++){const g=new THREE.Group();g.position.set((k?sup[sup.length-1]:sup[0])*.4,0,0);box3(-8,8,-5,-3.2,-sp/2-6,sp/2+6,bargeM,g);
+    const t=new THREE.Mesh(trussGeo(sp-.6),HAULM[2]);t.rotation.y=Math.PI/2;t.position.y=-3.2;t.castShadow=true;g.add(t);haul.add(g);barges.push({o:g,z:-200-k*260,v:7})}
+  const g=new THREE.Group();g.position.set(sup[0],0,-HW-16);box3(-12,12,-5,-2.8,-9,9,bargeM,g);box3(-2,2,-2.8,30,-2,2,craneM,g);   // 해상 크레인
+  const boom=new THREE.Mesh(new THREE.BoxGeometry(1.4,1.4,34),craneM);boom.position.set(0,29,13);boom.rotation.x=-.35;g.add(boom);
+  box3(-.15,.15,LOW+5,35,29,29.3,bedM,g);haul.add(g);updateHaul(0,HW)}
+function updateHaul(dt,HW){for(const t of trucks){t.z+=t.v*dt;if(t.z>-HW-10)t.z=-600;t.o.position.z=t.z}
+  for(const b of barges){b.z+=b.v*dt;if(b.z>-HW-40)b.z=-640;b.o.position.z=b.z;b.o.position.y=Math.sin(performance.now()/900+b.z)*.15}}
+/* 분해 보기: 부품 종류마다 위로 띄움 */
+const LIFT={pile:-6,seg:0,cap:8,brg:13,abut:0,stair:0,truss:20,deck:30,deco:33,house:40,elev:40};
+let asm=null;
+function startAssembly(){const list=parts.slice().sort((a,b)=>a.order-b.order);let t=0,prev=-1;
+  const lbl={pile:'① 강바닥에 강관 말뚝을 박는 중',seg:'② 교각 토막을 하나씩 쌓아 올리는 중',abut:'⑧ 양쪽 둑에 속 빈 강변 받침 셀을 2단으로 쌓고 자갈을 채우는 중',stair:'⑧ 강변 계단을 놓는 중',cap:'③ 교각 머리를 얹는 중',brg:'④ 면진 받침을 까는 중',truss:'⑤ 해상 크레인이 교각 사이 한 칸짜리 트러스를 통째로 들어 받침 위에 내려놓는 중',deco:'⑥ 산책로 나무와 유리 난간을 설치하는 중',deck:'⑥ 바닥 패널을 까는 중',house:'⑦ 공장에서 만든 집 모듈을 쌓는 중',elev:'⑦ 층마다 엘리베이터 토막을 함께 쌓아 올리는 중'};
+  const per={pile:.04,seg:.05,abut:.15,stair:.6,cap:.4,brg:.03,truss:.7,deck:.03,deco:.5,house:.08,elev:.05};
+  for(const p of list){if(Math.floor(p.order)!==prev){t+=.8;prev=Math.floor(p.order)}p.start=t;p.lbl=lbl[p.type];p.o.visible=false;t+=per[p.type]}
+  asm={t:0,list,end:t+2};explode=0;explodeT=0;document.getElementById('explodeBtn').classList.remove('on');document.getElementById('asmBtn').classList.add('on')}
+function updateAssembly(dt){if(!asm)return;asm.t+=dt;let cur=null;
+  for(const p of asm.list){const k=Math.min(1,Math.max(0,(asm.t-p.start)/1)),e=1-Math.pow(1-k,3),b=p.o.userData.base;p.o.visible=asm.t>p.start;
+    p.o.position.y=b.y+(p.type==='pile'?-14:14)*(1-e);if(asm.t>p.start&&k<1)cur=p}
+  if(cur){capEl.textContent=cur.lbl;capEl.style.display='block'}
+  if(asm.t>asm.end){for(const p of asm.list){p.o.visible=true;p.o.position.copy(p.o.userData.base)}asm=null;capEl.textContent='조립 완료 · 같은 키트로 다른 강에도 그대로';setTimeout(()=>{if(!asm)capEl.style.display='none'},2500);document.getElementById('asmBtn').classList.remove('on')}}
+/* 컨트롤 */
+const views={};function setView(k){const[p,t]=views[k];camera.position.set(...p);controls.target.set(...t)}
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view));
+document.getElementById('riverW').oninput=e=>{RW=+e.target.value;document.getElementById('riverWv').textContent=RW+'m'};document.getElementById('riverW').onchange=()=>build();
+document.getElementById('span').onchange=e=>{SPAN=+e.target.value;build()};document.getElementById('lanes').onchange=e=>{LANES=+e.target.value;build()};document.getElementById('floors').onchange=e=>{FL=+e.target.value;build()};
+document.getElementById('colorSel').onchange=e=>{colorMode=e.target.value;applyColor()};document.getElementById('split').onchange=e=>{SPLIT=e.target.value==='1';build()};
+document.getElementById('haulBtn').onclick=e=>{haulOn=!haulOn;haul.visible=haulOn;e.target.classList.toggle('on',haulOn);if(haulOn){setView('haul');colorMode='haul';document.getElementById('colorSel').value='haul';applyColor()}
+  capEl.textContent=haulOn?'운반 보기 · 초록 일반 트럭 · 노랑 특수 허가 트럭 · 파랑 바지선 · 빨강 운반 불가 — 집·바닥은 둑 뒤 도로로, 통째 트러스는 강으로 와서 해상 크레인이 거치':'';capEl.style.display=haulOn?'block':'none'};
+document.getElementById('explodeBtn').onclick=e=>{if(asm)return;explode=explode?0:1;e.target.classList.toggle('on',!!explode);capEl.textContent=explode?'분해 보기 · 부품 종류마다 띄워서 보여 줘요 (부품 색으로 함께 보면 더 잘 보여요)':'';capEl.style.display=explode?'block':'none'};
+document.getElementById('asmBtn').onclick=()=>{if(!asm){setView('home');startAssembly()}};
+let time='day';function applyEnv(){const n=time==='night',sky=n?0x0d1828:0xcfe6f3;scene.background=new THREE.Color(sky);scene.fog=new THREE.Fog(sky,600,1800);
+  sun.position.set(-140,200,160);sun.target.position.set(0,0,0);sun.intensity=n?.25:2.4;hemi.intensity=n?.2:.95;M.win.emissiveIntensity=n?1.4:0}
+document.querySelectorAll('[data-time]').forEach(b=>b.onclick=()=>{time=b.dataset.time;document.querySelectorAll('[data-time]').forEach(x=>x.classList.toggle('on',x===b));applyEnv()});
+function resize(){const w=view.clientWidth,h=view.clientHeight;if(!w||!h)return;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix()}
+new ResizeObserver(resize).observe(view);resize();applyEnv();build();
+const clock=new THREE.Clock();
+(function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05);
+  cabG.visible=!asm&&explodeT<.01;for(const c of cabs){c.t+=dt;const Tm=Math.max(.1,(c.top-c.y0)/1.5),ph=c.t%(2*Tm+4),u=ph<2?0:ph<2+Tm?(ph-2)/Tm:ph<4+Tm?1:1-(ph-4-Tm)/Tm;c.m.position.y=c.y0+1.2+(c.top-c.y0)*u}   // 승강기: 1층↔꼭대기 오르내림, 양 끝에서 2초 멈춤
+  if(!asm){explodeT+=(explode-explodeT)*Math.min(1,dt*3);for(const p of parts){const b=p.o.userData.base;p.o.position.y=b.y+LIFT[p.type]*explodeT}}
+  if(haulOn)updateHaul(dt,LANES*6);updateAssembly(dt);controls.update();renderer.render(scene,camera)})();
+</script>
+</body>
+</html>

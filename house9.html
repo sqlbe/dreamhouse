@@ -28,7 +28,7 @@ body.ui-off .ctl,body.ui-off .hint{display:none}
   <button id="uiToggle">☰ 메뉴</button>
 </header>
 <main id="view">
-  <div class="hint"><b>우클릭</b>: 그 지점으로 날아가 확대(우클릭 드래그는 화면 이동)<br><b>집이 먼저</b>: 다리 아래층은 도로 대신 <b>깊은 상자형 트러스</b>(높이 6m · 10m마다 가로 X 브레이싱)로 비우고 점검·설비 통로만 둠<br><b>하중 길</b>: 집 → 위 판 → 상자형 트러스 → 교각 머리보·면진 받침 → <b>유선형 교각 3개</b>(경간 25m) → 강바닥 말뚝<br><b>아치 계단 마을</b>: 돌 아치 + 보조 교각 2개(가운데 54m는 배 길로 비움)<br><b>오르는 길</b>: 양 끝 계단식 테라스 광장(4.5m씩 4단, 넓은 계단) + 유리 엘리베이터 탑 · 교각 옆 유리 코어 = 선착장 ~ 다리 위 · 집 묶음 사이 틈과 바닥 유리창으로 강에 빛</div>
+  <div class="hint"><b>우클릭</b>: 그 지점으로 날아가 확대(우클릭 드래그는 화면 이동)<br><b>집이 먼저</b>: 다리 아래층은 도로 대신 <b>통째 와렌 트러스</b>(교각 사이 한 칸 = 한 덩어리 · 높이 6m · 트러스 면 4줄 · 굵은 상자형 보)로 비우고 점검·설비 통로만 둠<br><b>하중 길</b>: 집 → 위 판 → 상자형 트러스 → 교각 머리보·면진 받침 → <b>유선형 교각 3개</b>(경간 25m) → 강바닥 말뚝<br><b>아치 계단 마을</b>: 돌 아치 + 보조 교각 2개(가운데 54m는 배 길로 비움)<br><b>오르는 길</b>: 양 끝 계단식 테라스 광장(4.5m씩 4단, 넓은 계단) + 유리 엘리베이터 탑 · 교각 옆 유리 코어 = 선착장 ~ 다리 위 · 집 묶음 사이 틈과 바닥 유리창으로 강에 빛</div>
   <div class="cap" id="cap"></div>
   <div class="ctl">
     <div class="row"><span class="lbl">홍수 수위</span><input id="flood" type="range" min="0" max="10" step="0.1" value="0" style="width:140px"><span class="num" id="floodLbl"></span></div>
@@ -117,27 +117,36 @@ cap('① 양 끝 계단식 테라스와 엘리베이터 탑을 짓는 중','rise
 /* 아래층: 도로(왕복 4차로) · 자전거길 · 트러스 옆벽 */
 const bridge=new THREE.Group();scene.add(bridge);bridgeRef=bridge;capS=scene.children.length;
 box3(-BL,BL,LOW-1.4,LOW,-DW,DW,M.steel,bridge);box3(-BL,BL,LOW,LOW+.05,-3,3,M.deck,bridge);   // 아래 판(바닥 현) · 가운데 점검·설비 통로(배관·전선)
-for(const z of[-DW,DW]){for(let x=-BL;x<BL;x+=10){const g=new THREE.BoxGeometry(Math.hypot(10,UP-LOW),.35,.35);const m=add(g,M.steel,x+5,(LOW+UP)/2,z,bridge);m.rotation.z=((x/10)%2?1:-1)*Math.atan2(UP-LOW,10)}   // 트러스 사선
-  box3(-BL,BL,UP-.6,UP-.3,z-.25,z+.25,M.steel,bridge);box3(-BL,BL,LOW,LOW+.3,z-.25,z+.25,M.steel,bridge);for(let x=-BL;x<=BL;x+=10)box3(x-.25,x+.25,LOW,UP-.6,z-.25,z+.25,M.steel,bridge)}   // 수직재(10m마다)
-for(let x=-BL;x<=BL;x+=10){box3(x-.2,x+.2,LOW,LOW+.5,-DW,DW,M.steel,bridge);box3(x-.2,x+.2,UP-1.1,UP-.6,-DW,DW,M.steel,bridge);for(const s of[-1,1]){const g=new THREE.BoxGeometry(.3,Math.hypot(DW*2,UP-LOW-1),.3),m=add(g,M.steel,x,(LOW+UP-.6)/2,0,bridge);m.rotation.x=s*Math.atan2(DW*2,UP-LOW-1)}}   // 가로 X 브레이싱
-cap('① 바지선으로 실어 온 트러스 칸을 크레인으로 하나씩 올려 잇는 중','drop',true);
-/* 위층: 바닥 · 가운데 공원 산책로(나무·벤치·잔디) · 바닥 유리창 · 양쪽 3층 집 묶음(사이 틈 = 빛 골목) */
+/* 통째 트러스: 받침 사이 한 칸 전체를 공장에서 한 덩어리로 · 와렌(/\/\) · 굵은 상자형 위·아래 보 · 트러스 면 4줄(12m 간격) · 가로보 촘촘 · 아래 X 가새 */
+function spanTruss(len){const P=[],V=(x,y,z)=>new THREE.Vector3(x,y,z),UPV=V(0,1,0);
+  const bar=(a,b,t)=>{const d=b.clone().sub(a),l=d.length(),g=new THREE.BoxGeometry(t,l,t);g.translate(0,l/2,0);g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(UPV,d.normalize()));g.translate(a.x,a.y,a.z);P.push(g.toNonIndexed())};
+  const hl=len/2,n=Math.max(4,2*Math.round(len/8)),pw=len/n,yb=LOW+.45,yt=UP-.75,ZS=[-DW,-6,6,DW];
+  for(const z of ZS){bar(V(-hl,yb,z),V(hl,yb,z),.9);bar(V(-hl,yt,z),V(hl,yt,z),.9);for(const x of[-hl,hl])bar(V(x,yb,z),V(x,yt,z),.8);
+    for(let i=0;i<n;i++){const x0=-hl+i*pw,xm=x0+pw/2;bar(V(x0,yb,z),V(xm,yt,z),.55);bar(V(xm,yt,z),V(x0+pw,yb,z),.55);bar(V(xm,yb,z),V(xm,yt,z),.3)}}
+  for(let i=0;i<=n;i++){const x=-hl+i*pw;bar(V(x,yb,-DW),V(x,yb,DW),.6);bar(V(x,yt,-DW),V(x,yt,DW),.45);if(i<n){bar(V(x+pw/2,yt,-DW),V(x+pw/2,yt,DW),.45);for(let k=0;k<3;k++){bar(V(x,yb,ZS[k]),V(x+pw,yb,ZS[k+1]),.22);bar(V(x,yb,ZS[k+1]),V(x+pw,yb,ZS[k]),.22)}}}
+  return mergeGeometries(P)}
+{const pts=[-BL,-W-2,-25,0,25,W+2,BL];for(let k=0;k+1<pts.length;k++){const a=pts[k]+.2,b=pts[k+1]-.2;add(spanTruss(b-a),M.steel,(a+b)/2,0,0,bridge)}}   // 6덩어리: 교각·강변 블록 위에서만 이음
+cap('① 해상 크레인이 교각 사이 한 칸짜리 트러스를 통째로 들어 받침 위에 내려놓는 중','drop',true);
+/* 위층: 바닥 · 가운데 공원 산책로(나무·벤치·잔디) · 바닥 유리창 · 양쪽 4층 집 묶음(사이 틈 = 빛 골목) · 묶음마다 조립식 엘리베이터 */
 box3(-BL,BL,UP-.6,UP,-DW,DW,M.steel,bridge);
 const slots=[];for(let x=-BL+6;x<BL-6;x+=26)slots.push(x);                                                                   // 집 묶음 시작 x
 box3(-BL,BL,UP,UP+.05,-8,8,M.deck,bridge);for(const z of[-5,5])box3(-BL+2,BL-2,UP+.05,UP+.2,z-1.4,z+1.4,M.lawn,bridge);
 for(let x=-BL+8;x<BL-6;x+=13){tree(x,UP+.2,(x/13)%2?-5:5,1,bridge);box3(x+3,x+5,UP+.05,UP+.5,-.4,.4,M.wood,bridge)}   // 나무 · 벤치
 for(const x of[-50,0,50])box3(x-5,x+5,UP-.02,UP+.08,-2.2,2.2,glass,bridge);                                                 // 바닥 유리창(아래 강이 보임)
 cap('① 트러스 위에 바닥판과 공원 산책로를 까는 중','drop',false);
-// 집 묶음: 길이 18m(상자 1.5개 길이) × 깊이 8m × 3층, 묶음 사이 8m 틈
-const HP={skin:[],win:[],trim:[],rail:[],lawn:[],wood:[]};const BX=(x1,x2,y1,y2,z1,z2,k)=>{const g=new THREE.BoxGeometry(x2-x1,y2-y1,z2-z1);g.translate((x1+x2)/2,(y1+y2)/2,(z1+z2)/2);HP[k].push(g)};
-BX(-9,9,0,9.9,-4,4,'skin');BX(-9.15,9.15,9.9,10.1,-4.15,4.15,'trim');BX(-8.6,8.6,10.1,10.25,-3.6,3.6,'lawn');
-for(let f=0;f<3;f++){const y=f*3.3;for(const sz of[-1,1]){const z=sz*4;BX(-8,8,y+.8,y+2.6,Math.min(z,z+sz*.05),Math.max(z,z+sz*.05),'win');for(let x=-8;x<=8;x+=4)BX(x-.06,x+.06,y+.7,y+2.7,Math.min(z,z+sz*.1),Math.max(z,z+sz*.1),'trim');
+// 집 묶음: 길이 18m(상자 1.5개 길이) × 깊이 8m × 4층(최대), 묶음 사이 8m 틈 · 산책로 쪽에 엘리베이터 승강로(층마다 한 토막씩 쌓음)
+const NF=4,HP={skin:[],win:[],trim:[],rail:[],lawn:[],wood:[],eg:[],ef:[]};const BX=(x1,x2,y1,y2,z1,z2,k)=>{const g=new THREE.BoxGeometry(x2-x1,y2-y1,z2-z1);g.translate((x1+x2)/2,(y1+y2)/2,(z1+z2)/2);HP[k].push(g)};
+const HH=NF*3.3;BX(-9,9,0,HH,-4,4,'skin');BX(-9.15,9.15,HH,HH+.2,-4.15,4.15,'trim');BX(-8.6,8.6,HH+.2,HH+.35,-3.6,3.6,'lawn');
+for(let f=0;f<NF;f++){const y=f*3.3;for(const sz of[-1,1]){const z=sz*4;BX(-8,8,y+.8,y+2.6,Math.min(z,z+sz*.05),Math.max(z,z+sz*.05),'win');for(let x=-8;x<=8;x+=4)BX(x-.06,x+.06,y+.7,y+2.7,Math.min(z,z+sz*.1),Math.max(z,z+sz*.1),'trim');
   if(sz>0&&f){BX(-6,6,y,y+.12,z,z+1.2,'trim');BX(-6,6,y+.12,y+1.05,z+1.16,z+1.2,'rail')}}}
 BX(-1,1,0,2.3,-4.06,-4,'wood');
+{const ex=4.5,ez=-5.3;BX(ex-1.2,ex+1.2,0,HH+.3,ez-1.2,ez+1.2,'eg');for(const dx of[-1.3,1.1])for(const dz of[-1.3,1.1])BX(ex+dx,ex+dx+.2,0,HH+.3,ez+dz,ez+dz+.2,'ef');   // 유리 승강로 · 모서리 철골
+  for(let f=0;f<=NF;f++)BX(ex-1.3,ex+1.3,f*3.3,f*3.3+.2,ez-1.3,ez+1.3,'ef');BX(ex-1.4,ex+1.4,HH+.3,HH+1.9,ez-1.4,ez+1.4,'ef');BX(ex-1.25,ex+1.25,HH,HH+.2,ez+1.1,-4,'ef')}   // 층 테두리(토막 이음) · 맨 위 기계실 · 옥상 연결
 const HT={};for(const k in HP)HT[k]=mergeGeometries(HP[k]);
-const houses=[];let nh=0;
+const houses=[];let nh=0;const eFrame=std(0xdfe7ec,{roughness:.5,metalness:.3}),eGlass=new THREE.MeshPhysicalMaterial({color:0xcfeaf7,transparent:true,opacity:.35,roughness:.05,depthWrite:false}),eCab=std(0xf7f2e6,{roughness:.4});
 for(const sz of[-1,1])slots.forEach((x0,i)=>{const g=new THREE.Group();g.position.set(x0+9,UP,sz*13);g.rotation.y=sz>0?0:Math.PI;bridge.add(g);   // 바깥(강 경치) 쪽에 발코니
-  for(const k in HT){const m=new THREE.Mesh(HT[k],k==='skin'?SKIN[(i+(sz>0?1:0))%SKIN.length]:k==='win'?M.win:k==='lawn'?M.lawn:k==='wood'?M.wood:k==='rail'?glass:M.white);if(k==='skin'||k==='trim'){m.castShadow=m.receiveShadow=true}g.add(m)}nh+=6});
+  for(const k in HT){const m=new THREE.Mesh(HT[k],k==='skin'?SKIN[(i+(sz>0?1:0))%SKIN.length]:k==='win'?M.win:k==='lawn'?M.lawn:k==='wood'?M.wood:k==='rail'?glass:k==='eg'?eGlass:k==='ef'?eFrame:M.white);if(k==='skin'||k==='trim'||k==='ef'){m.castShadow=m.receiveShadow=true}g.add(m)}nh+=NF*2;
+  const c=add(new THREE.BoxGeometry(2,2.4,2),eCab,4.5,1.4,-5.3,g);c.userData.hcab=Math.random()*20});
 cap('① 공장에서 만든 가벼운 조립식 집을 한 동씩 올리는 중','drop',true);
 for(const z of[-DW,DW])box3(-BL,BL,UP,UP+1.1,z-.03,z+.03,glass,bridge).castShadow=false;                                     // 가장자리 유리 난간
 // 가로등
@@ -146,6 +155,7 @@ cap('① 난간과 가로등을 다는 중','pop',false);
 /* 쌍둥이 다리: 같은 키트로 50m 옆(하류 쪽)에 하나 더 — 다리 폭 36m + 간격 50m */
 {const DZ=-(DW*2+50),cl=[];for(const o of[...STEPS[0].objs,...STEPS[1].objs]){const c=o.clone();c.position.z+=DZ;scene.add(c);cl.push(c);const lf=lifts.find(l=>l.m===o);if(lf)lifts.push({m:c,t:lf.t+3})}
  const b2=bridge.clone();b2.position.z=DZ;scene.add(b2);cl.push(b2);STEPS.push({label:'④ 같은 조립 키트로 50m 옆에 쌍둥이 다리를 하나 더 세우는 중',kind:'rise',each:true,objs:cl});capS=scene.children.length}
+const hcabs=[];scene.traverse(o=>{if(o.userData.hcab!==undefined)hcabs.push(o)});   // 두 다리의 집 엘리베이터 칸
 /* ===== 두 번째 다리: 아치 위 계단식 마을(돌 아치 · 리알토 다리처럼) — 강 안에 교각 없음 ===== */
 const ZA=-200,ZB=-400,stone=std(0xd8c7a6,{roughness:.85}),roofM=std(0x8a4b3a,{roughness:.7}),conc=std(0xe9e6df,{roughness:.6});
 let STP=null;function smallHouse(){if(STP)return STP;const P={skin:[],roof:[],win:[],trim:[],wood:[]},B=(x1,x2,y1,y2,z1,z2,k)=>{const g=new THREE.BoxGeometry(x2-x1,y2-y1,z2-z1);g.translate((x1+x2)/2,(y1+y2)/2,(z1+z2)/2);P[k].push(g)};
@@ -245,6 +255,7 @@ const clock=new THREE.Clock();
   if(moving)for(const m of movers){m.o.position[m.axis]+=m.v*dt;if(m.o.position[m.axis]>m.lim)m.o.position[m.axis]=-m.lim;if(m.o.position[m.axis]<-m.lim)m.o.position[m.axis]=m.lim}
   if(fly.q){fly.t+=dt/1.4;const k=Math.min(1,fly.t),e=k*k*(3-2*k);camera.position.lerpVectors(fly.from.p,fly.q.p,e);controls.target.lerpVectors(fly.from.t,fly.q.t,e);if(k>=1)fly.q=null}
   if(moving)for(const c of carsC){c.x+=c.dir*c.v*dt;if(c.x>c.L)c.x=-c.L;if(c.x<-c.L)c.x=c.L;const y=c.yRd(c.x),y2=c.yRd(c.x+.5);c.o.position.set(c.x,y+.25,c.o.position.z);c.o.rotation.z=Math.atan2(y2-y,.5)}
+  if(!asm)for(const c of hcabs){c.userData.hcab+=dt;const Tm=(NF-1)*3.3/1.5,ph=c.userData.hcab%(2*Tm+4),u=ph<2?0:ph<2+Tm?(ph-2)/Tm:ph<4+Tm?1:1-(ph-4-Tm)/Tm;c.position.y=1.4+(NF-1)*3.3*u}   // 집 엘리베이터: 1층↔꼭대기
   for(const l of lifts){l.t+=dt;const k=(Math.sin(l.t*.35)+1)/2;l.m.position.y=1.2+k*(UP-.1)}
   updateAssembly(dt);controls.update();renderer.render(scene,camera)})();
 </script>
